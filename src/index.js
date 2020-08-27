@@ -1,14 +1,36 @@
 import * as tf from '@tensorflow/tfjs';
 
-const MODEL_PATH = 'models/h5_graph/model.json';
+const DEFAULT_MODEL_PATH = 'models/h5_graph/model.json';
 const IMAGE_SIZE = 256;
 let videoPlaying = false;
+let MODEL_LOADED = false;
+
+function getExtension(filename){
+  let parts = filename.split('.');
+  return parts[parts.length - 1];
+}
+
+function isVideo(filename) {
+  var ext = getExtension(filename);
+  switch (ext.toLowerCase()) {
+    case 'm4v':
+    case 'avi':
+    case 'mpg':
+    case 'mp4':
+      // etc
+      return true;
+  }
+  return false;
+}
 
 let model;
-const demo = async () => {
+async function loadModel(modelPath) {
   status('Loading model...');
-  
-  model = await tf.loadGraphModel(MODEL_PATH, {strict: true});
+  try{
+    model = await tf.loadGraphModel(modelPath, {strict: true});
+  } catch (err){
+    console.log("ERROR LOADING MODEL");
+  }
 
   // Warmup the model. This isn't necessary, but makes the first prediction
   // faster. Call `dispose` to release the WebGL memory allocated for the return
@@ -16,62 +38,52 @@ const demo = async () => {
   model.predict(tf.zeros([1, IMAGE_SIZE, IMAGE_SIZE, 3])).dispose();
 
   status('');
-
-  if (img.complete && img.naturalHeight !== 0) {
-    predict(img);
-  } else {
-    img.onload = () => {
-      predict(img);
-    }
-  }
-
-  //console.log(vid);
-
-  for(let el of document.getElementsByClassName('file-container')){
-    el.style.display = '';
-  }
+  MODEL_LOADED = true;
 };
 
+async function predict(imgElement, canvas) {
+  if(!MODEL_LOADED) {
+    init(DEFAULT_MODEL_PATH);
+  } else {
+    status('Predicting...');
 
-async function predict(imgElement) {
-  status('Predicting...');
+    // The first start time includes the time it takes to extract the image
+    // from the HTML and preprocess it, in additon to the predict() call.
+    const startTime1 = performance.now();
+    // The second start time excludes the extraction and preprocessing and
+    // includes only the predict() call.
+    let startTime2;
+    const logits = tf.tidy(() => {
+      // tf.browser.fromPixels() returns a Tensor from an image element.
+      const img = tf.browser.fromPixels(imgElement).toFloat();
 
-  // The first start time includes the time it takes to extract the image
-  // from the HTML and preprocess it, in additon to the predict() call.
-  const startTime1 = performance.now();
-  // The second start time excludes the extraction and preprocessing and
-  // includes only the predict() call.
-  let startTime2;
-  const logits = tf.tidy(() => {
-    // tf.browser.fromPixels() returns a Tensor from an image element.
-    const img = tf.browser.fromPixels(imgElement).toFloat();
+      // PREPROCESSING
+      const scale = 24;
+      const downscale = Math.floor(IMAGE_SIZE/scale);
+      const downscaled = img.resizeNearestNeighbor([downscale, downscale]);
+      const upscaled = downscaled.resizeBilinear([IMAGE_SIZE, IMAGE_SIZE])
 
-    // PREPROCESSING
-    const scale = 24;
-    const downscale = Math.floor(IMAGE_SIZE/scale);
-    const downscaled = img.resizeNearestNeighbor([downscale, downscale]);
-    const upscaled = downscaled.resizeBilinear([IMAGE_SIZE, IMAGE_SIZE])
+      const offset = tf.scalar(127.5);
+      const normalized = upscaled.sub(offset).div(offset);
 
-    const offset = tf.scalar(127.5);
-    const normalized = upscaled.sub(offset).div(offset);
+      // Reshape to a single-element batch so we can pass it to predict.
+      const batched = normalized.reshape([1, IMAGE_SIZE, IMAGE_SIZE, 3]);
 
-    // Reshape to a single-element batch so we can pass it to predict.
-    const batched = normalized.reshape([1, IMAGE_SIZE, IMAGE_SIZE, 3]);
+      startTime2 = performance.now();
+      return model.predict(batched);
+    });
 
-    startTime2 = performance.now();
-    return model.predict(batched);
-  });
+    const output = await preprocess(logits);
+    const scale = tf.scalar(0.5);
+    const fin = output.mul(scale).add(scale);
 
-  const output = await preprocess(logits);
-  const scale = tf.scalar(0.5);
-  const fin = output.mul(scale).add(scale);
+    const totalTime1 = performance.now() - startTime1;
+    const totalTime2 = performance.now() - startTime2;
+    status(`Done in ${Math.floor(totalTime1)} ms ` +
+        `(not including preprocessing: ${Math.floor(totalTime2)} ms)`);
 
-  const totalTime1 = performance.now() - startTime1;
-  const totalTime2 = performance.now() - startTime2;
-  status(`Done in ${Math.floor(totalTime1)} ms ` +
-      `(not including preprocessing: ${Math.floor(totalTime2)} ms)`);
-
-  tf.browser.toPixels(fin, outputImage);
+    tf.browser.toPixels(fin, canvas);
+  }
 }
 
 async function preprocess(logits){
@@ -108,6 +120,40 @@ filesElement.addEventListener('change', evt => {
   }
 });
 
+const modelFile = document.getElementById('model-file');
+modelFile.addEventListener('change', evt => {
+  let files = evt.target.files;
+  if(files.length > 1) {
+    status('Please load only one model at a time.')
+    return;
+  }
+
+  for(let file of files){
+    if (!(file.type === 'application/json')) {
+      status('Model must be in JSON format.');
+      return;
+    }
+    console.log(file);
+
+    //const json = JSON.stringify(file);
+    const blob = new Blob([json], {type: 'application/json'});
+
+    let reader = new FileReader();
+    reader.onload = e => {
+      // Fill the image & call predict.
+      // let img = document.createElement('img');
+      let src = e.target.result;
+      console.log(src);
+      //img.onload = () => predict(img);
+      loadModel(src);
+    };
+
+    // Read in the image file as a data URL.
+    reader.readAsText(blob);
+  }
+});
+
+
 function processVideo(){
   let cap = new cv.VideoCapture(vid);
   let frame = new cv.Mat(vid.height, vid.width, cv.CV_8UC4); // CORRECT
@@ -128,7 +174,10 @@ function processVideo(){
       let begin = Date.now();
       cap.read(frame);
       dst = frame.roi(mask);
-      cv.imshow(outputVideo, dst);
+      cv.imshow(outputCV2, dst);
+
+      predict(outputCV2, outputVideo);
+
       let delay = 1000/FPS - (Date.now() - begin);
       setTimeout(stream, delay); 
     } catch (err) {
@@ -142,7 +191,10 @@ const demoStatusElement = document.getElementById('status');
 const status = msg => demoStatusElement.innerText = msg;
 const img = document.getElementById('test_img');
 const vid = document.getElementById('test_vid');
+const imgBtn = document.getElementById('image_button');
+const vidBtn = document.getElementById('video_button');
 const outputImage = document.getElementById('output_image_canvas');
+const outputCV2 = document.getElementById('cv2_video_canvas');
 const outputVideo = document.getElementById('output_video_canvas');
 
 vid.onplay = () => {
@@ -150,5 +202,15 @@ vid.onplay = () => {
   processVideo();
 }
 
+imgBtn.addEventListener('click', e => {
+  if (img.complete && img.naturalHeight !== 0) {
+    predict(img, outputImage);
+  } else {
+    img.onload = () => {
+      predict(img, outputImage);
+    }
+  }
+});
+vidBtn.addEventListener('click', e => processVideo());
 
-demo();
+//loadModel();
