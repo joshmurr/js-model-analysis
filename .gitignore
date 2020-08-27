@@ -2,6 +2,7 @@ package-lock.json
 dist/models
 dist/opencv
 dist/main.js
+dist/test_*
 old_models
 node_modules
 .cache 
