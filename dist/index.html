@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>***</title>
+    <link rel="stylesheet" type="text/css" href="styles.css">
+  </head>
+  <body>
+    <div class="main">
+
+      <div class="container">
+        <div id="status"></div>
+      </div>
+
+      <div class="container" id="images">
+        <img style="display:block" id="test_img" src="test_pics/0001.jpg" width=256 height=256 />
+        <div class="file-container" style="display: none">
+          Upload an image: <input type="file" id="image-file" name="files[]" multiple />
+        </div>
+        <canvas style="display:block" id="output_image_canvas" width=256 height=256 />
+      </div>
+
+      <div class="container" id="video">
+        <video id="test_vid" src="test_vids/0001.mp4" width=512 height=384 muted controls> </video>
+        <div class="file-container" style="display: none">
+          Upload a video: <input type="file" id="video-file" name="files[]" multiple />
+        </div>
+        <canvas style="display:block" id="output_video_canvas" width=256 height=256 />
+      </div>
+
+
+      <script src="./main.js"></script>
+      <script async src="opencv/opencv-3.4.0.js" type="text/javascript"></script>
+    </div>
+  <body>
+</html>

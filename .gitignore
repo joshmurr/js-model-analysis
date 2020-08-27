@@ -1,5 +1,8 @@
 package-lock.json
-dist
+dist/models
+dist/opencv
+dist/main.js
 old_models
 node_modules
 .cache 
+video

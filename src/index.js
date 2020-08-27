@@ -2,6 +2,7 @@ import * as tf from '@tensorflow/tfjs';
 
 const MODEL_PATH = 'models/h5_graph/model.json';
 const IMAGE_SIZE = 256;
+let videoPlaying = false;
 
 let model;
 const demo = async () => {
@@ -24,8 +25,13 @@ const demo = async () => {
     }
   }
 
-  document.getElementById('file-container').style.display = '';
+  //console.log(vid);
+
+  for(let el of document.getElementsByClassName('file-container')){
+    el.style.display = '';
+  }
 };
+
 
 async function predict(imgElement) {
   status('Predicting...');
@@ -65,7 +71,7 @@ async function predict(imgElement) {
   status(`Done in ${Math.floor(totalTime1)} ms ` +
       `(not including preprocessing: ${Math.floor(totalTime2)} ms)`);
 
-  tf.browser.toPixels(fin, outputCanvas);
+  tf.browser.toPixels(fin, outputImage);
 }
 
 async function preprocess(logits){
@@ -78,7 +84,7 @@ async function preprocess(logits){
   })
 }
 
-const filesElement = document.getElementById('files');
+const filesElement = document.getElementById('image-file');
 filesElement.addEventListener('change', evt => {
   let files = evt.target.files;
   // Display thumbnails & issue call to predict each image.
@@ -102,10 +108,47 @@ filesElement.addEventListener('change', evt => {
   }
 });
 
+function processVideo(){
+  let cap = new cv.VideoCapture(vid);
+  let frame = new cv.Mat(vid.height, vid.width, cv.CV_8UC4); // CORRECT
+
+  const offset_y = Math.floor((vid.height - IMAGE_SIZE) / 2);
+  const offset_x = Math.floor((vid.width - IMAGE_SIZE) / 2);
+  let dst = new cv.Mat();
+  let mask = new cv.Rect(offset_x, offset_y, IMAGE_SIZE, IMAGE_SIZE);
+
+  const FPS = 25;
+  function stream(){
+    try{
+      if(!videoPlaying){
+        dst.delete();
+        frame.delete();
+        return;
+      }
+      let begin = Date.now();
+      cap.read(frame);
+      dst = frame.roi(mask);
+      cv.imshow(outputVideo, dst);
+      let delay = 1000/FPS - (Date.now() - begin);
+      setTimeout(stream, delay); 
+    } catch (err) {
+      console.log(err);
+    }
+  }
+ setTimeout(stream, 0); 
+}
 
 const demoStatusElement = document.getElementById('status');
 const status = msg => demoStatusElement.innerText = msg;
 const img = document.getElementById('test_img');
-const outputCanvas = document.getElementById('output_canvas');
+const vid = document.getElementById('test_vid');
+const outputImage = document.getElementById('output_image_canvas');
+const outputVideo = document.getElementById('output_video_canvas');
+
+vid.onplay = () => {
+  videoPlaying = true;
+  processVideo();
+}
+
 
 demo();

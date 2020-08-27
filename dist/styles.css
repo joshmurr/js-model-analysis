@@ -1,0 +1,30 @@
+html {
+  box-sizing: border-box;
+  font-family: Roboto, Arial, sans-serif;
+}
+
+*,
+*:before,
+*:after {
+  box-sizing: inherit;
+}
+
+.main {
+  display: grid;
+  grid-template-columns: 600px 600px;
+  grid-template-rows: 600px 600px;
+  grid-gap: 20px;
+}
+
+.container {
+  display: grid;
+  justify-content: center;
+  align-items: center;
+  border: 1px solid rgba(0, 0, 0, 0.03);
+  border-radius: 3px;
+  background-color: lightgray;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  margin: 0 0 5px 0;
+}
