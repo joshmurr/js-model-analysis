@@ -31,6 +31,7 @@ const model_upload_time_text = document.getElementById('model_upload_time');
 const recent_inference_time_text = document.getElementById('recent_inference_time');
 const average_inference_time_text = document.getElementById('average_inference_time');
 const image_preprocess_time_text = document.getElementById('image_preprocess_time');
+const fps_text = document.getElementById('fps');
 let inference_count = 0;
 let total_inference_time = 0;
 let average_inference_time = 0;
@@ -161,6 +162,8 @@ function processVideo(){
   let mask = new cv.Rect(offset_x, offset_y, IMAGE_SIZE, IMAGE_SIZE);
 
   const FPS = 25;
+  let total_delay=0;
+  let i=0;
   function stream(){
     try{
       if(!videoPlaying){
@@ -176,6 +179,9 @@ function processVideo(){
       predict(outputCV2Video, outputVideo);
 
       let delay = 1000/FPS - (Date.now() - begin);
+      total_delay+=delay;
+      if(i%10==0) fps_text.innerText = Math.floor(total_delay/i);
+      i++;
       setTimeout(stream, delay); 
     } catch (err) {
       console.log(err);
@@ -209,7 +215,10 @@ imgBtn.addEventListener('click', e => {
     }
   }
 });
-vidBtn.addEventListener('click', e => processVideo());
+vidBtn.addEventListener('click', e => {
+  vid.play();
+  videoPlaying = true;
+  processVideo()
+});
 
-//loadModel(DEFAULT_MODEL);
 init();
