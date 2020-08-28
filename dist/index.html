@@ -14,30 +14,59 @@
           <h3>TFJS Model Analyser and Benchmarking</h3>
         </div>
 
-        <div class="container-output">
-          <div class="status">
-            <p>Model Info:</p>
-            <span class="status-text" id="status"></span>
-          </div>
-        </div>
-
+        <h4>Stats</h4>
         <div class="container-upload">
           <div class="file-container">
             Choose a Model:
             <select id="model_select">
-              <!--<option value="Flowers_Uncompressed_H5">Flowers_Uncompressed_H5</option>-->
-              <!--<option value="2">Model 2</option>-->
+              <!-- Populated in JS -->
             </select>
+            <button type="button" id="model_button">Load Model</button>
           </div>
+        </div>
+        <div class="container-stats">
+
+          <table>
+            <tr>
+              <td>Status: </td>
+              <td id="status">-</td>
+            </tr>
+            <tr>
+              <td>Model Upload Time:</td>
+              <td id="model_upload_time">-</td>
+            </tr>
+            <tr>
+              <td>Image Preprocess Time:</td>
+              <td id="image_preprocess_time">-</td>
+            </tr>
+            <tr>
+              <td>Most Recent Inference Time:</td>
+              <td id="recent_inference_time">-</td>
+            </tr>
+            <tr>
+              <td>Average Inference Time:</td>
+              <td id="average_inference_time">-</td>
+            </tr>
+            <tr>
+              <td>Video Frames Per Second:</td>
+              <td id="fps">-</td>
+            </tr>
+          </table>
+
         </div>
       </div>
 
       <!--IMAGES -->
       <div class="container">
+        <h4>Image</h4>
         <div class="container-output">
           <div class="item">
             <img id="test_img" src="test_pics/0001.jpg" width=256 height=256 />
             <button type="button" id="image_button">Process Image</button>
+          </div>
+          <div class="item">
+            <canvas id="cv2_image_canvas" width=256 height=256> </canvas>
+            <p>CV2 Image</p>
           </div>
           <div class="item">
             <canvas id="output_image_canvas" width=256 height=256> </canvas>
@@ -55,6 +84,7 @@
 
       <!--VIDEO -->
       <div class="container">
+        <h4>Video</h4>
         <div class="container-output">
           <div class="item">
             <video id="test_vid" src="test_vids/0001.mp4" width=512 height=384 muted controls> </video>

@@ -1,8 +1,9 @@
 import * as tf from '@tensorflow/tfjs';
+//import * as utils from 'utils.js';
 
 const MODELS = {
   'Flowers_Uncompressed_H5' : 'models/h5_graph/model.json',
-  'NULL' : 'NULL/NULL/NULL.NULL',
+  'NULL' : 'NULL',
 };
 
 const DEFAULT_MODEL = 'Flowers_Uncompressed_H5';
@@ -13,15 +14,35 @@ let MODEL_LOADED = false;
 
 const demoStatusElement = document.getElementById('status');
 const status = msg => demoStatusElement.innerText = msg;
+
 const img = document.getElementById('test_img');
 const vid = document.getElementById('test_vid');
 const imgBtn = document.getElementById('image_button');
 const vidBtn = document.getElementById('video_button');
+const modelBtn = document.getElementById('model_button');
 const outputImage = document.getElementById('output_image_canvas');
-const outputCV2 = document.getElementById('cv2_video_canvas');
+const outputCV2Image = document.getElementById('cv2_image_canvas');
+const outputCV2Video = document.getElementById('cv2_video_canvas');
 const outputVideo = document.getElementById('output_video_canvas');
 let modelSelect = document.getElementById('model_select');
 
+// STATS
+const model_upload_time_text = document.getElementById('model_upload_time');
+const recent_inference_time_text = document.getElementById('recent_inference_time');
+const average_inference_time_text = document.getElementById('average_inference_time');
+const image_preprocess_time_text = document.getElementById('image_preprocess_time');
+let inference_count = 0;
+let total_inference_time = 0;
+let average_inference_time = 0;
+
+function updateInferenceTime(inferenceTime){
+  inference_count++;
+  total_inference_time += inferenceTime;
+  average_inference_time = total_inference_time/inference_count;
+
+  recent_inference_time_text.innerText = inferenceTime;
+  average_inference_time_text.innerText = average_inference_time;
+}
 
 function init(){
   for(let model in MODELS){
@@ -33,28 +54,10 @@ function init(){
   }
 }
 
-
-function getExtension(filename){
-  let parts = filename.split('.');
-  return parts[parts.length - 1];
-}
-
-function isVideo(filename) {
-  var ext = getExtension(filename);
-  switch (ext.toLowerCase()) {
-    case 'm4v':
-    case 'avi':
-    case 'mpg':
-    case 'mp4':
-      // etc
-      return true;
-  }
-  return false;
-}
-
 let model;
 async function loadModel(modelID) {
   status('Loading model...');
+  const startTime = performance.now();
   try{
     model = await tf.loadGraphModel(MODELS[modelID], {strict: true});
   } catch (err){
@@ -62,29 +65,26 @@ async function loadModel(modelID) {
     console.log("ERROR LOADING MODEL");
   }
 
-  // Warmup the model. This isn't necessary, but makes the first prediction
-  // faster. Call `dispose` to release the WebGL memory allocated for the return
-  // value of `predict`.
   model.predict(tf.zeros([1, IMAGE_SIZE, IMAGE_SIZE, 3])).dispose();
+
+  const totalTime = performance.now() - startTime;
+  model_upload_time_text.innerText = totalTime;
 
   status('Model Loaded Successfully.');
   MODEL_LOADED = true;
 };
 
-async function predict(imgElement, canvas) {
+async function predict(imgElement, outputCanvas) {
   if(!MODEL_LOADED) {
     init(DEFAULT_MODEL_PATH);
   } else {
-    status('Predicting...');
+    status('Inferencing...');
 
     // The first start time includes the time it takes to extract the image
     // from the HTML and preprocess it, in additon to the predict() call.
-    const startTime1 = performance.now();
-    // The second start time excludes the extraction and preprocessing and
-    // includes only the predict() call.
+    const startTime = performance.now();
     let startTime2;
     const logits = tf.tidy(() => {
-      // tf.browser.fromPixels() returns a Tensor from an image element.
       const img = tf.browser.fromPixels(imgElement).toFloat();
 
       // PREPROCESSING
@@ -96,7 +96,6 @@ async function predict(imgElement, canvas) {
       const offset = tf.scalar(127.5);
       const normalized = upscaled.sub(offset).div(offset);
 
-      // Reshape to a single-element batch so we can pass it to predict.
       const batched = normalized.reshape([1, IMAGE_SIZE, IMAGE_SIZE, 3]);
 
       startTime2 = performance.now();
@@ -107,12 +106,14 @@ async function predict(imgElement, canvas) {
     const scale = tf.scalar(0.5);
     const fin = output.mul(scale).add(scale);
 
-    const totalTime1 = performance.now() - startTime1;
-    const totalTime2 = performance.now() - startTime2;
-    status(`Done in ${Math.floor(totalTime1)} ms ` +
-        `(not including preprocessing: ${Math.floor(totalTime2)} ms)`);
+    const endTime = performance.now();
+    const totalTime = endTime - startTime;
+    const preprocessTime = endTime - startTime2;
+    updateInferenceTime(totalTime);
+    image_preprocess_time_text.innerText = preprocessTime;
+    status('Finished Inferencing.');
 
-    tf.browser.toPixels(fin, canvas);
+    tf.browser.toPixels(fin, outputCanvas);
   }
 }
 
@@ -150,40 +151,6 @@ filesElement.addEventListener('change', evt => {
   }
 });
 
-//const modelFile = document.getElementById('model-file');
-//modelFile.addEventListener('change', evt => {
-  //let files = evt.target.files;
-  //if(files.length > 1) {
-    //status('Please load only one model at a time.')
-    //return;
-  //}
-
-  //for(let file of files){
-    //if (!(file.type === 'application/json')) {
-      //status('Model must be in JSON format.');
-      //return;
-    //}
-    //console.log(file);
-
-    ////const json = JSON.stringify(file);
-    //const blob = new Blob([json], {type: 'application/json'});
-
-    //let reader = new FileReader();
-    //reader.onload = e => {
-      //// Fill the image & call predict.
-      //// let img = document.createElement('img');
-      //let src = e.target.result;
-      //console.log(src);
-      ////img.onload = () => predict(img);
-      //loadModel(src);
-    //};
-
-    //// Read in the image file as a data URL.
-    //reader.readAsText(blob);
-  //}
-//});
-
-
 function processVideo(){
   let cap = new cv.VideoCapture(vid);
   let frame = new cv.Mat(vid.height, vid.width, cv.CV_8UC4); // CORRECT
@@ -204,9 +171,9 @@ function processVideo(){
       let begin = Date.now();
       cap.read(frame);
       dst = frame.roi(mask);
-      cv.imshow(outputCV2, dst);
+      cv.imshow(outputCV2Video, dst);
 
-      predict(outputCV2, outputVideo);
+      predict(outputCV2Video, outputVideo);
 
       let delay = 1000/FPS - (Date.now() - begin);
       setTimeout(stream, delay); 
@@ -217,7 +184,9 @@ function processVideo(){
  setTimeout(stream, 0); 
 }
 
-modelSelect.addEventListener('change', e => loadModel(e.target.value));
+modelBtn.addEventListener('click', e => {
+  loadModel(modelSelect.options[modelSelect.selectedIndex].value)
+});
 
 vid.onplay = () => {
   videoPlaying = true;
