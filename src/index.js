@@ -1,9 +1,38 @@
 import * as tf from '@tensorflow/tfjs';
 
-const DEFAULT_MODEL_PATH = 'models/h5_graph/model.json';
+const MODELS = {
+  'Flowers_Uncompressed_H5' : 'models/h5_graph/model.json',
+  'NULL' : 'NULL/NULL/NULL.NULL',
+};
+
+const DEFAULT_MODEL = 'Flowers_Uncompressed_H5';
 const IMAGE_SIZE = 256;
+
 let videoPlaying = false;
 let MODEL_LOADED = false;
+
+const demoStatusElement = document.getElementById('status');
+const status = msg => demoStatusElement.innerText = msg;
+const img = document.getElementById('test_img');
+const vid = document.getElementById('test_vid');
+const imgBtn = document.getElementById('image_button');
+const vidBtn = document.getElementById('video_button');
+const outputImage = document.getElementById('output_image_canvas');
+const outputCV2 = document.getElementById('cv2_video_canvas');
+const outputVideo = document.getElementById('output_video_canvas');
+let modelSelect = document.getElementById('model_select');
+
+
+function init(){
+  for(let model in MODELS){
+    let opt = document.createElement('option');
+    let text = document.createTextNode(model);
+    opt.value = model;
+    opt.appendChild(text);
+    modelSelect.appendChild(opt);
+  }
+}
+
 
 function getExtension(filename){
   let parts = filename.split('.');
@@ -24,11 +53,12 @@ function isVideo(filename) {
 }
 
 let model;
-async function loadModel(modelPath) {
+async function loadModel(modelID) {
   status('Loading model...');
   try{
-    model = await tf.loadGraphModel(modelPath, {strict: true});
+    model = await tf.loadGraphModel(MODELS[modelID], {strict: true});
   } catch (err){
+    status(err.message);
     console.log("ERROR LOADING MODEL");
   }
 
@@ -37,7 +67,7 @@ async function loadModel(modelPath) {
   // value of `predict`.
   model.predict(tf.zeros([1, IMAGE_SIZE, IMAGE_SIZE, 3])).dispose();
 
-  status('');
+  status('Model Loaded Successfully.');
   MODEL_LOADED = true;
 };
 
@@ -120,38 +150,38 @@ filesElement.addEventListener('change', evt => {
   }
 });
 
-const modelFile = document.getElementById('model-file');
-modelFile.addEventListener('change', evt => {
-  let files = evt.target.files;
-  if(files.length > 1) {
-    status('Please load only one model at a time.')
-    return;
-  }
+//const modelFile = document.getElementById('model-file');
+//modelFile.addEventListener('change', evt => {
+  //let files = evt.target.files;
+  //if(files.length > 1) {
+    //status('Please load only one model at a time.')
+    //return;
+  //}
 
-  for(let file of files){
-    if (!(file.type === 'application/json')) {
-      status('Model must be in JSON format.');
-      return;
-    }
-    console.log(file);
+  //for(let file of files){
+    //if (!(file.type === 'application/json')) {
+      //status('Model must be in JSON format.');
+      //return;
+    //}
+    //console.log(file);
 
-    //const json = JSON.stringify(file);
-    const blob = new Blob([json], {type: 'application/json'});
+    ////const json = JSON.stringify(file);
+    //const blob = new Blob([json], {type: 'application/json'});
 
-    let reader = new FileReader();
-    reader.onload = e => {
-      // Fill the image & call predict.
-      // let img = document.createElement('img');
-      let src = e.target.result;
-      console.log(src);
-      //img.onload = () => predict(img);
-      loadModel(src);
-    };
+    //let reader = new FileReader();
+    //reader.onload = e => {
+      //// Fill the image & call predict.
+      //// let img = document.createElement('img');
+      //let src = e.target.result;
+      //console.log(src);
+      ////img.onload = () => predict(img);
+      //loadModel(src);
+    //};
 
-    // Read in the image file as a data URL.
-    reader.readAsText(blob);
-  }
-});
+    //// Read in the image file as a data URL.
+    //reader.readAsText(blob);
+  //}
+//});
 
 
 function processVideo(){
@@ -187,19 +217,18 @@ function processVideo(){
  setTimeout(stream, 0); 
 }
 
-const demoStatusElement = document.getElementById('status');
-const status = msg => demoStatusElement.innerText = msg;
-const img = document.getElementById('test_img');
-const vid = document.getElementById('test_vid');
-const imgBtn = document.getElementById('image_button');
-const vidBtn = document.getElementById('video_button');
-const outputImage = document.getElementById('output_image_canvas');
-const outputCV2 = document.getElementById('cv2_video_canvas');
-const outputVideo = document.getElementById('output_video_canvas');
+modelSelect.addEventListener('change', e => loadModel(e.target.value));
 
 vid.onplay = () => {
   videoPlaying = true;
   processVideo();
+}
+
+vid.onended = () => {
+  videoPlaying = false;
+}
+vid.onpause = () => {
+  videoPlaying = false;
 }
 
 imgBtn.addEventListener('click', e => {
@@ -213,4 +242,5 @@ imgBtn.addEventListener('click', e => {
 });
 vidBtn.addEventListener('click', e => processVideo());
 
-//loadModel();
+//loadModel(DEFAULT_MODEL);
+init();

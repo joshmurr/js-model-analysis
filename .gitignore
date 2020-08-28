@@ -7,3 +7,4 @@ old_models
 node_modules
 .cache 
 video
+*.swp

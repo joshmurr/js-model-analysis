@@ -6,78 +6,79 @@
     <link rel="stylesheet" type="text/css" href="styles.css">
   </head>
   <body>
-      <header class="container"> 
-        <div class="title">
+    <div class="body-container">
+
+      
+      <div class="container">
+        <div class="container-output">
           <h3>TFJS Model Analyser and Benchmarking</h3>
         </div>
-        <div class="status">
-          <span class="status-text" id="status"></span>
-        </div>
-        <div class="upload">
-          <div class="file-container">
-            Upload a Model: <input type="file" id="model-file" name="file" />
+
+        <div class="container-output">
+          <div class="status">
+            <p>Model Info:</p>
+            <span class="status-text" id="status"></span>
           </div>
         </div>
-      </header>
 
-      <main>
-        <!--IMAGES -->
-        <div class="container">
-          <div class="container-output">
-            <div class="item">
-              <img id="test_img" src="test_pics/0001.jpg" width=256 height=256 />
-              <p>Input Image</p>
-            </div>
-            <div class="item">
-              <canvas id="output_image_canvas" width=256 height=256> </canvas>
-              <p>Output Image</p>
-            </div>
+        <div class="container-upload">
+          <div class="file-container">
+            Choose a Model:
+            <select id="model_select">
+              <!--<option value="Flowers_Uncompressed_H5">Flowers_Uncompressed_H5</option>-->
+              <!--<option value="2">Model 2</option>-->
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!--IMAGES -->
+      <div class="container">
+        <div class="container-output">
+          <div class="item">
+            <img id="test_img" src="test_pics/0001.jpg" width=256 height=256 />
             <button type="button" id="image_button">Process Image</button>
           </div>
-
-          <div class="upload">
-            <div class="file-container">
-              Upload an image: <input type="file" id="image-file" name="files[]" multiple />
-            </div>
+          <div class="item">
+            <canvas id="output_image_canvas" width=256 height=256> </canvas>
+            <p>Output Image</p>
           </div>
-
         </div>
 
+        <div class="container-upload">
+          <div class="file-container">
+            Upload an image: <input type="file" id="image-file" name="files[]" multiple />
+          </div>
+        </div>
+      </div>
 
-        <!--VIDEO -->
-        <div class="container">
-          <div class="container-output">
-            <div class="item">
-              <video id="test_vid" src="test_vids/0001.mp4" width=512 height=384 muted controls> </video>
-              <p>Input Video</p>
-            </div>
-            <div class="item">
-              <canvas style="display:block" id="cv2_video_canvas" width=256 height=256></canvas>
-              <p>CV2 Video</p>
-            </div>
-            <div class="item">
-              <canvas style="display:block" id="output_video_canvas" width=256 height=256></canvas>
-              <p>Output Video</p>
-            </div>
+
+      <!--VIDEO -->
+      <div class="container">
+        <div class="container-output">
+          <div class="item">
+            <video id="test_vid" src="test_vids/0001.mp4" width=512 height=384 muted controls> </video>
             <button type="button" id="video_button">Process Video</button>
           </div>
-
-          <div class="upload">
-            <div class="file-container">
-              Upload a video: <input type="file" id="video-file" name="files[]" multiple />
-            </div>
+          <div class="item">
+            <canvas style="display:block" id="cv2_video_canvas" width=256 height=256></canvas>
+            <p>CV2 Video</p>
+          </div>
+          <div class="item">
+            <canvas style="display:block" id="output_video_canvas" width=256 height=256></canvas>
+            <p>Output Video</p>
           </div>
         </div>
-      </main>
 
-      <footer>
-      
-      </footer>
+        <div class="container-upload">
+          <div class="file-container">
+            Upload a video: <input type="file" id="video-file" name="files[]" multiple />
+          </div>
+        </div>
+      </div>
+    </div>
 
-
-
-
-      <script src="./main.js"></script>
-      <script async src="opencv/opencv-3.4.0.js" type="text/javascript"></script>
-  <body>
+    <script src="./main.js"></script>
+    <script async src="opencv/opencv-3.4.0.js" type="text/javascript"></script>
+    <body>
 </html>
