@@ -4,7 +4,7 @@ import { preprocessImageCV2 } from './image_processing.js';
 
 const MODELS = {
   'Flowers_Uncompressed_H5' : 'models/h5_graph/model.json',
-  'NULL' : 'NULL',
+  'User Upload' : 'NULL',
 };
 
 const DEFAULT_MODEL = 'Flowers_Uncompressed_H5';
@@ -13,8 +13,15 @@ const IMAGE_SIZE = 256;
 let videoPlaying = false;
 let MODEL_LOADED = false;
 
-const demoStatusElement = document.getElementById('status');
-const status = msg => demoStatusElement.innerText = msg;
+let userModel= {
+  json: null,
+  weights: null,
+}
+
+const statusElement = document.getElementById('status');
+const status = msg => statusElement.innerText = msg;
+const errorsElement = document.getElementById('errors');
+const errors = msg => errorsElement.innerText = msg;
 
 const img = document.getElementById('test_img');
 const vid = document.getElementById('test_vid');
@@ -25,7 +32,7 @@ const outputImage = document.getElementById('output_image_canvas');
 const outputCV2Image = document.getElementById('cv2_image_canvas');
 const outputCV2Video = document.getElementById('cv2_video_canvas');
 const outputVideo = document.getElementById('output_video_canvas');
-let modelSelect = document.getElementById('model_select');
+const modelSelect = document.getElementById('model_select');
 
 // STATS
 const model_upload_time_text = document.getElementById('model_upload_time');
@@ -36,6 +43,16 @@ const fps_text = document.getElementById('fps');
 let inference_count = 0;
 let total_inference_time = 0;
 let average_inference_time = 0;
+// Stats tf.Memory()
+const tfMemoryDOM = {
+  tfnumBytes : document.getElementById('tfMemNumBytes'),
+  tfnumBytesInGPU : document.getElementById('tfMemNumBytesInGPU'),
+  tfnumBytesInGPUAllocated : document.getElementById('tfMemNumBytesInGPUAllocated'),
+  tfnumBytesInGPUFree : document.getElementById('tfMemNumBytesInGPUFree'),
+  tfnumDataBuffers : document.getElementById('tfMemNumDataBuffers'),
+  tfnumTensors : document.getElementById('tfMemNumTensors'),
+  tfunreliable : document.getElementById('tfMemUnreliable'),
+}
 
 // CHECKBOXES
 const greyscaleBox = document.getElementById('greyscale_checkbox');
@@ -63,13 +80,26 @@ function init(){
 
 let model;
 async function loadModel(modelID) {
+  if(model){
+    status('Clearing previous model...');
+    model.dispose();
+  }
+
   status('Loading model...');
+
   const startTime = performance.now();
   try{
-    model = await tf.loadGraphModel(MODELS[modelID], {strict: true});
+    if(modelID === 'User Upload'){
+      const load = tf.io.browserFiles([jsonFileElement.files[0], ...weightsFilesElement.files]);
+      model = await tf.loadGraphModel(load, { strict: true });
+    } else {
+      model = await tf.loadGraphModel(MODELS[modelID], {strict: true});
+    }
   } catch (err){
-    status(err.message);
-    console.log("ERROR LOADING MODEL");
+    status("Error loading model!");
+    errors(err);
+    console.log(err);
+    return;
   }
 
   model.predict(tf.zeros([1, IMAGE_SIZE, IMAGE_SIZE, 3])).dispose();
@@ -79,8 +109,13 @@ async function loadModel(modelID) {
 
   status('Model Loaded Successfully.');
   MODEL_LOADED = true;
-  console.log(JSON.stringify(await tf.io.listModels()));
-  console.log('numTensors : ' + tf.memory().numTensors);
+
+  const tfMemoryOutput = tf.memory();
+
+  for(const item in tfMemoryOutput){
+    const selector = 'tf' + item;
+    tfMemoryDOM[selector].innerText = tfMemoryOutput[item];
+  }
 };
 
 async function predict(imgElement, outputCanvas) {
@@ -99,12 +134,6 @@ async function predict(imgElement, outputCanvas) {
 
       const img = tf.browser.fromPixels(imgElement).toFloat();
 
-      // IMAGE PREPROCESSING
-      //const scale = 24;
-      //const downscale = Math.floor(IMAGE_SIZE/scale);
-      //const downscaled = img.resizeNearestNeighbor([downscale, downscale]);
-      //const upscaled = downscaled.resizeBilinear([IMAGE_SIZE, IMAGE_SIZE])
-
       const offset = tf.scalar(127.5);
       const normalized = img.sub(offset).div(offset);
 
@@ -117,8 +146,6 @@ async function predict(imgElement, outputCanvas) {
     // Furthur processing of the model prediction so that we can display in
     // a HTML canvas.
     const output = await postProcessTF(logits);
-    const scale = tf.scalar(0.5);
-    const fin = output.mul(scale).add(scale);
 
     const endTime = performance.now();
     const totalTime = endTime - startTime;
@@ -128,7 +155,7 @@ async function predict(imgElement, outputCanvas) {
     status('Finished Inferencing.');
 
 
-    tf.browser.toPixels(fin, outputCanvas);
+    tf.browser.toPixels(output, outputCanvas);
   }
 }
 
@@ -137,8 +164,9 @@ async function postProcessTF(logits){
     const scale = tf.scalar(0.5);
     const squeezed = logits.squeeze().mul(scale).add(scale);
     const resized = tf.image.resizeBilinear(squeezed, [IMAGE_SIZE, IMAGE_SIZE]);
+    const output = resized.mul(scale).add(scale);
 
-    return resized;
+    return output;
   })
 }
 
@@ -180,6 +208,38 @@ videoFilesElement.addEventListener('change', evt => {
     };
     reader.readAsDataURL(f);
   }
+});
+
+const jsonFileElement = document.getElementById('json-file');
+jsonFileElement.addEventListener('change', evt => {
+  let files = evt.target.files;
+  if(files.length > 1) {
+    error('There should only be one JSON file.');
+    return;
+  }
+  for(let i=0, f; f=files[i]; i++){
+    if(!f.type === 'application/json'){
+      error('Filetype should be JSON!');
+      continue;
+    }
+  }
+  userModel.json = files;
+  modelSelect.value = 'User Upload';
+  status('Successfully loaded model JSON.');
+});
+
+const weightsFilesElement = document.getElementById('weights-files');
+weightsFilesElement.addEventListener('change', evt => {
+  let files = evt.target.files;
+  for(let i=0, f; f=files[i]; i++){
+    if(!f.type === 'application/octet-stream'){
+      error('Wrong Weights filetype!');
+      continue;
+    }
+  }
+  userModel.weights = files;
+  modelSelect.value = 'User Upload';
+  status('Successfully loaded model weights.');
 });
 
 function processVideo(videoElement){

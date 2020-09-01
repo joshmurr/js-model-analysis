@@ -21,6 +21,12 @@
             <select id="model_select">
               <!-- Populated in JS -->
             </select>
+            <div class="file-container">
+              Upload Model JSON File: <input type="file" id="json-file" name="files[]" />
+            </div>
+            <div class="file-container">
+              Upload Model Weights as Binaries: <input type="file" id="weights-files" name="files[]" multiple />
+            </div>
             <button type="button" id="model_button">Load Model</button>
           </div>
         </div>
@@ -30,6 +36,10 @@
             <tr>
               <td>Status: </td>
               <td id="status">-</td>
+            </tr>
+            <tr>
+              <td>Errors: </td>
+              <td id="errors">-</td>
             </tr>
             <tr>
               <td>Model Upload Time:</td>
@@ -51,11 +61,46 @@
               <td>Video Frames Per Second:</td>
               <td id="fps">-</td>
             </tr>
+            <!--tf.memory -->
+            <tr>
+              <th>tf.Memory() Output:</th>
+            </tr>
+            <tr>
+              <td>numBytes</td>
+              <td id="tfMemNumBytes">-</td>
+            </tr>
+            <tr>
+              <td>numBytesInGPU</td>
+              <td id="tfMemNumBytesInGPU">-</td>
+            </tr>
+            <tr>
+              <td>numBytesInGPUAllocated</td>
+              <td id="tfMemNumBytesInGPUAllocated">-</td>
+            </tr>
+            <tr>
+              <td>numBytesInGPUFree</td>
+              <td id="tfMemNumBytesInGPUFree">-</td>
+            </tr>
+            <tr>
+              <td>numDataBuffer</td>
+              <td id="tfMemNumDataBuffers">-</td>
+            </tr>
+            <tr>
+              <td>numTensors</td>
+              <td id="tfMemNumTensors">-</td>
+            </tr>
+            <tr>
+              <td>unrelieble</td>
+              <td id="tfMemUnreliable">-</td>
+            </tr>
           </table>
         </div>
 
         <div class="container-stats">
           <table>
+            <tr>
+              <th>OpenCV Image Manipulations</th>
+            </tr>
             <tr>
               <td>Grayscale</td>
               <td><input type="checkbox" id="greyscale_checkbox"></td>
