@@ -1,5 +1,6 @@
 package-lock.json
 dist/main.js
+dist/test_pics/flowers
 old_models
 node_modules
 .cache 

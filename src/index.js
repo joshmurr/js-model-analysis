@@ -1,4 +1,5 @@
 import * as tf from '@tensorflow/tfjs';
+import { preprocessImageCV2 } from './image_processing.js';
 //import * as utils from 'utils.js';
 
 const MODELS = {
@@ -35,6 +36,10 @@ const fps_text = document.getElementById('fps');
 let inference_count = 0;
 let total_inference_time = 0;
 let average_inference_time = 0;
+
+// CHECKBOXES
+const greyscaleBox = document.getElementById('greyscale_checkbox');
+const downUpscaleBox = document.getElementById('downupscale_checkbox');
 
 function updateInferenceTime(inferenceTime){
   inference_count++;
@@ -73,6 +78,8 @@ async function loadModel(modelID) {
 
   status('Model Loaded Successfully.');
   MODEL_LOADED = true;
+  console.log(JSON.stringify(await tf.io.listModels()));
+  console.log('numTensors : ' + tf.memory().numTensors);
 };
 
 async function predict(imgElement, outputCanvas) {
@@ -86,16 +93,19 @@ async function predict(imgElement, outputCanvas) {
     const startTime = performance.now();
     let startTime2;
     const logits = tf.tidy(() => {
+      // This preprocesses the image and returns the model prediction
+      // as a tf.Tensor.
+
       const img = tf.browser.fromPixels(imgElement).toFloat();
 
-      // PREPROCESSING
-      const scale = 24;
-      const downscale = Math.floor(IMAGE_SIZE/scale);
-      const downscaled = img.resizeNearestNeighbor([downscale, downscale]);
-      const upscaled = downscaled.resizeBilinear([IMAGE_SIZE, IMAGE_SIZE])
+      // IMAGE PREPROCESSING
+      //const scale = 24;
+      //const downscale = Math.floor(IMAGE_SIZE/scale);
+      //const downscaled = img.resizeNearestNeighbor([downscale, downscale]);
+      //const upscaled = downscaled.resizeBilinear([IMAGE_SIZE, IMAGE_SIZE])
 
       const offset = tf.scalar(127.5);
-      const normalized = upscaled.sub(offset).div(offset);
+      const normalized = img.sub(offset).div(offset);
 
       const batched = normalized.reshape([1, IMAGE_SIZE, IMAGE_SIZE, 3]);
 
@@ -103,7 +113,9 @@ async function predict(imgElement, outputCanvas) {
       return model.predict(batched);
     });
 
-    const output = await preprocess(logits);
+    // Furthur processing of the model prediction so that we can display in
+    // a HTML canvas.
+    const output = await postProcessTF(logits);
     const scale = tf.scalar(0.5);
     const fin = output.mul(scale).add(scale);
 
@@ -114,11 +126,12 @@ async function predict(imgElement, outputCanvas) {
     image_preprocess_time_text.innerText = preprocessTime;
     status('Finished Inferencing.');
 
+
     tf.browser.toPixels(fin, outputCanvas);
   }
 }
 
-async function preprocess(logits){
+async function postProcessTF(logits){
   return tf.tidy(() => {
     const scale = tf.scalar(0.5);
     const squeezed = logits.squeeze().mul(scale).add(scale);
@@ -162,20 +175,17 @@ videoFilesElement.addEventListener('change', evt => {
     let reader = new FileReader();
     reader.onload = e => {
       vid.src = e.target.result;
-      vid.onload = () => processVideo();
+      vid.onload = () => processVideo(vid);
     };
     reader.readAsDataURL(f);
   }
 });
 
-function processVideo(){
-  let cap = new cv.VideoCapture(vid);
-  let frame = new cv.Mat(vid.height, vid.width, cv.CV_8UC4); // CORRECT
+function processVideo(videoElement){
+  let cap = new cv.VideoCapture(videoElement);
+  let frame = new cv.Mat(videoElement.height, videoElement.width, cv.CV_8UC4); // CORRECT
 
-  const offset_y = Math.floor((vid.height - IMAGE_SIZE) / 2);
-  const offset_x = Math.floor((vid.width - IMAGE_SIZE) / 2);
   let dst = new cv.Mat();
-  let mask = new cv.Rect(offset_x, offset_y, IMAGE_SIZE, IMAGE_SIZE);
 
   const FPS = 25;
   let total_delay=0;
@@ -189,7 +199,8 @@ function processVideo(){
       }
       let begin = Date.now();
       cap.read(frame);
-      dst = frame.roi(mask);
+
+      preprocessImageCV2(frame, dst, [videoElement.width, videoElement.height], 256, downUpscaleBox.checked, greyscaleBox.checked);
       cv.imshow(outputCV2Video, dst);
 
       predict(outputCV2Video, outputVideo);
@@ -206,13 +217,24 @@ function processVideo(){
  setTimeout(stream, 0); 
 }
 
+function processImage(imgElement, outputCanvas){
+  let img = cv.imread(imgElement);
+  let dst = new cv.Mat();
+
+  preprocessImageCV2(img, dst, [imgElement.width, imgElement.height], 256, downUpscaleBox.checked, greyscaleBox.checked);
+  cv.imshow(outputCanvas, dst);
+
+  img.delete();
+  dst.delete();
+}
+
 modelBtn.addEventListener('click', e => {
   loadModel(modelSelect.options[modelSelect.selectedIndex].value)
 });
 
 vid.onplay = () => {
   videoPlaying = true;
-  processVideo();
+  processVideo(vid);
 }
 
 vid.onended = () => {
@@ -224,17 +246,19 @@ vid.onpause = () => {
 
 imgBtn.addEventListener('click', e => {
   if (img.complete && img.naturalHeight !== 0) {
-    predict(img, outputImage);
+    processImage(img, outputCV2Image);
+    predict(outputCV2Image, outputImage);
   } else {
     img.onload = () => {
-      predict(img, outputImage);
+      processImage(img, outputCV2Image);
+      predict(outputCV2Image, outputImage);
     }
   }
 });
 vidBtn.addEventListener('click', e => {
   vid.play();
   videoPlaying = true;
-  processVideo()
+  processVideo(videoElement)
 });
 
 init();
