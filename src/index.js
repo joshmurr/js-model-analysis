@@ -77,7 +77,7 @@ async function loadModel(modelID) {
 
 async function predict(imgElement, outputCanvas) {
   if(!MODEL_LOADED) {
-    init(DEFAULT_MODEL_PATH);
+    init(DEFAULT_MODEL);
   } else {
     status('Inferencing...');
 
@@ -128,8 +128,8 @@ async function preprocess(logits){
   })
 }
 
-const filesElement = document.getElementById('image-file');
-filesElement.addEventListener('change', evt => {
+const imageFilesElement = document.getElementById('image-file');
+imageFilesElement.addEventListener('change', evt => {
   let files = evt.target.files;
   // Display thumbnails & issue call to predict each image.
   for (let i = 0, f; f = files[i]; i++) {
@@ -148,6 +148,22 @@ filesElement.addEventListener('change', evt => {
     };
 
     // Read in the image file as a data URL.
+    reader.readAsDataURL(f);
+  }
+});
+
+const videoFilesElement = document.getElementById('video-file');
+videoFilesElement.addEventListener('change', evt => {
+  let files = evt.target.files;
+  for (let i = 0, f; f = files[i]; i++) {
+    if (!f.type.match('video.*')) {
+      continue;
+    }
+    let reader = new FileReader();
+    reader.onload = e => {
+      vid.src = e.target.result;
+      vid.onload = () => processVideo();
+    };
     reader.readAsDataURL(f);
   }
 });
