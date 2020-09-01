@@ -40,6 +40,7 @@ let average_inference_time = 0;
 // CHECKBOXES
 const greyscaleBox = document.getElementById('greyscale_checkbox');
 const downUpscaleBox = document.getElementById('downupscale_checkbox');
+const brightnessBox = document.getElementById('brightness_checkbox');
 
 function updateInferenceTime(inferenceTime){
   inference_count++;
@@ -200,7 +201,7 @@ function processVideo(videoElement){
       let begin = Date.now();
       cap.read(frame);
 
-      preprocessImageCV2(frame, dst, [videoElement.width, videoElement.height], 256, downUpscaleBox.checked, greyscaleBox.checked);
+      preprocessImageCV2(frame, dst, [videoElement.width, videoElement.height], 256, downUpscaleBox.checked, greyscaleBox.checked, brightnessBox.checked);
       cv.imshow(outputCV2Video, dst);
 
       predict(outputCV2Video, outputVideo);
@@ -221,7 +222,7 @@ function processImage(imgElement, outputCanvas){
   let img = cv.imread(imgElement);
   let dst = new cv.Mat();
 
-  preprocessImageCV2(img, dst, [imgElement.width, imgElement.height], 256, downUpscaleBox.checked, greyscaleBox.checked);
+  preprocessImageCV2(img, dst, [imgElement.width, imgElement.height], 256, downUpscaleBox.checked, greyscaleBox.checked, brightnessBox.checked);
   cv.imshow(outputCanvas, dst);
 
   img.delete();
@@ -258,7 +259,7 @@ imgBtn.addEventListener('click', e => {
 vidBtn.addEventListener('click', e => {
   vid.play();
   videoPlaying = true;
-  processVideo(videoElement)
+  processVideo(vid)
 });
 
 init();

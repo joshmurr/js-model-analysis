@@ -1,4 +1,4 @@
-export function preprocessImageCV2(cv2mat, dst, size, targetSize=256, downUpscale, desaturate){
+export function preprocessImageCV2(cv2mat, dst, size, targetSize=256, downUpscale, desaturate, brightness){
   let output = cv2mat.clone();
 
   if(size[0] !== 256 || size[1] !== 256){
@@ -20,6 +20,9 @@ export function preprocessImageCV2(cv2mat, dst, size, targetSize=256, downUpscal
   if(desaturate){
     cv.threshold(output, output, 150, 200, cv.THRESH_TRUNC); // Desaturate
     //cv.cvtColor(dst, dst, cv.COLOR_RGBA2GRAY, 3); // Grayscale
+  }
+  if(brightness){
+    cv.convertScaleAbs(output, output, 2, 75);
   }
   //cv.imshow(outputCV2Video, dst);
   output.copyTo(dst);
