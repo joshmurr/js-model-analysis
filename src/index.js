@@ -250,6 +250,8 @@ function parseJSON(blob){
   jsonReader.onload = e => {
     const json = JSON.parse(e.target.result);
 
+    console.log(json);
+
     const modelTopology = json['modelTopology'];
 
     for(const item in json){
