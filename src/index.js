@@ -90,7 +90,7 @@ async function loadModel(modelID) {
   const startTime = performance.now();
   try{
     if(modelID === 'User Upload'){
-      const load = tf.io.browserFiles([jsonFileElement.files[0], ...weightsFilesElement.files]);
+      const load = tf.io.browserFiles([userModel.json, ...userModel.weights]);
       model = await tf.loadGraphModel(load, { strict: true });
     } else {
       model = await tf.loadGraphModel(MODELS[modelID], {strict: true});
@@ -223,10 +223,77 @@ jsonFileElement.addEventListener('change', evt => {
       continue;
     }
   }
-  userModel.json = files;
+
+  userModel.json = files[0];
+
+  parseJSON(userModel.json);
+
   modelSelect.value = 'User Upload';
   status('Successfully loaded model JSON.');
 });
+
+function parseJSON(blob){
+  const jsonDOM = {
+    convertedBy : document.getElementById('convertedBy'),
+    format : document.getElementById('format'),
+    generatedBy : document.getElementById('generatedBy'),
+    inputTensorname : document.getElementById('inputTensorName'),
+    inputTensordtype : document.getElementById('inputTensorType'),
+    inputTensortensorShape : document.getElementById('inputTensorShape'),
+    outputTensorname : document.getElementById('outputTensorName'),
+    outputTensordtype : document.getElementById('outputTensorType'),
+    outputTensortensorShape : document.getElementById('outputTensorShape'),
+  }
+
+
+  const jsonReader = new FileReader();
+  jsonReader.onload = e => {
+    const json = JSON.parse(e.target.result);
+
+    const modelTopology = json['modelTopology'];
+
+    for(const item in json){
+      if(jsonDOM.hasOwnProperty(item)){
+        jsonDOM[item].innerText = json[item];
+      }
+    }
+
+    const inputs = json.userDefinedMetadata.signature.inputs;
+    
+    for(const item in inputs){
+      for(const input in inputs[item]){
+        if(input === 'tensorShape'){
+          let st = ""
+          for(const d in inputs[item][input]['dim']){
+            st = st.concat(inputs[item][input]['dim'][d]['size'], ', ');
+          }
+          jsonDOM['inputTensortensorShape'].innerText = st;
+        } else {
+          jsonDOM['inputTensor'+input].innerText = inputs[item][input];
+        }
+      }
+    }
+
+    const outputs = json.userDefinedMetadata.signature.outputs;
+    for(const item in outputs){
+      for(const output in outputs[item]){
+        if(output === 'tensorShape'){
+          let st = ""
+          for(const d in outputs[item][output]['dim']){
+            st = st.concat(outputs[item][output]['dim'][d]['size'], ', ');
+          }
+          jsonDOM['outputTensortensorShape'].innerText = st;
+        } else {
+          jsonDOM['outputTensor'+output].innerText = outputs[item][output];
+        }
+      }
+      
+    }
+  };
+  jsonReader.readAsText(blob);
+}
+
+
 
 const weightsFilesElement = document.getElementById('weights-files');
 weightsFilesElement.addEventListener('change', evt => {
