@@ -4,6 +4,8 @@ import { preprocessImageCV2 } from './image_processing.js';
 
 const MODELS = {
   'Flowers_Uncompressed_H5' : 'models/h5_graph/model.json',
+  'webcam2flower_uncompressed' : 'models/webcam2flower/uncompressed/model.json',
+  'webcam2flower_uint8_compressed' : 'models/webcam2flower/uint8_compressed/model.json',
   'User Upload' : 'NULL',
 };
 
@@ -164,9 +166,9 @@ async function postProcessTF(logits){
     const scale = tf.scalar(0.5);
     const squeezed = logits.squeeze().mul(scale).add(scale);
     const resized = tf.image.resizeBilinear(squeezed, [IMAGE_SIZE, IMAGE_SIZE]);
-    const output = resized.mul(scale).add(scale);
+    //const output = resized.mul(scale).add(scale);
 
-    return output;
+    return resized;
   })
 }
 
@@ -249,8 +251,6 @@ function parseJSON(blob){
   const jsonReader = new FileReader();
   jsonReader.onload = e => {
     const json = JSON.parse(e.target.result);
-
-    console.log(json);
 
     const modelTopology = json['modelTopology'];
 
