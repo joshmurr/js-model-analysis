@@ -6,11 +6,13 @@ const MODELS = {
   'Flowers_Uncompressed_H5' : 'models/h5_graph/model.json',
   'webcam2flower_uncompressed' : 'models/webcam2flower/uncompressed/model.json',
   'webcam2flower_uint8_compressed' : 'models/webcam2flower/uint8_compressed/model.json',
+  'greyscale2flower' : 'models/greyscale2flower/uncompressed/model.json',
   'User Upload' : 'NULL',
 };
 
 const DEFAULT_MODEL = 'Flowers_Uncompressed_H5';
 const IMAGE_SIZE = 256;
+let MODEL_INPUT_SHAPE;
 
 let videoPlaying = false;
 let MODEL_LOADED = false;
@@ -57,6 +59,7 @@ const tfMemoryDOM = {
 }
 
 // CHECKBOXES
+const desaturateBox = document.getElementById('desaturate_checkbox');
 const greyscaleBox = document.getElementById('greyscale_checkbox');
 const downUpscaleBox = document.getElementById('downupscale_checkbox');
 const brightnessBox = document.getElementById('brightness_checkbox');
@@ -104,7 +107,9 @@ async function loadModel(modelID) {
     return;
   }
 
-  model.predict(tf.zeros([1, IMAGE_SIZE, IMAGE_SIZE, 3])).dispose();
+  MODEL_INPUT_SHAPE =  parseJSON(model.artifacts).map(dim => Math.abs(dim.size));
+
+  model.predict(tf.zeros(MODEL_INPUT_SHAPE)).dispose();
 
   const totalTime = performance.now() - startTime;
   model_upload_time_text.innerText = totalTime;
@@ -134,12 +139,12 @@ async function predict(imgElement, outputCanvas) {
       // This preprocesses the image and returns the model prediction
       // as a tf.Tensor.
 
-      const img = tf.browser.fromPixels(imgElement).toFloat();
+      const img = tf.browser.fromPixels(imgElement, MODEL_INPUT_SHAPE[3]).toFloat();
 
       const offset = tf.scalar(127.5);
       const normalized = img.sub(offset).div(offset);
 
-      const batched = normalized.reshape([1, IMAGE_SIZE, IMAGE_SIZE, 3]);
+      const batched = normalized.reshape(MODEL_INPUT_SHAPE);
 
       startTime2 = performance.now();
       return model.predict(batched);
@@ -228,13 +233,11 @@ jsonFileElement.addEventListener('change', evt => {
 
   userModel.json = files[0];
 
-  parseJSON(userModel.json);
-
   modelSelect.value = 'User Upload';
   status('Successfully loaded model JSON.');
 });
 
-function parseJSON(blob){
+function parseJSON(json){
   const jsonDOM = {
     convertedBy : document.getElementById('convertedBy'),
     format : document.getElementById('format'),
@@ -247,55 +250,48 @@ function parseJSON(blob){
     outputTensortensorShape : document.getElementById('outputTensorShape'),
   }
 
+  const modelTopology = json['modelTopology'];
 
-  const jsonReader = new FileReader();
-  jsonReader.onload = e => {
-    const json = JSON.parse(e.target.result);
+  for(const item in json){
+    if(jsonDOM.hasOwnProperty(item)){
+      jsonDOM[item].innerText = json[item];
+    }
+  }
 
-    const modelTopology = json['modelTopology'];
-
-    for(const item in json){
-      if(jsonDOM.hasOwnProperty(item)){
-        jsonDOM[item].innerText = json[item];
+  const inputs = json.userDefinedMetadata.signature.inputs;
+  let input_shape;
+  for(const item in inputs){
+    for(const input in inputs[item]){
+      if(input === 'tensorShape'){
+        input_shape = inputs[item][input]['dim'];
+        let st = ""
+        for(const d in input_shape){
+          st = st.concat(input_shape[d]['size'], ', ');
+        }
+        jsonDOM['inputTensortensorShape'].innerText = st;
+      } else {
+        jsonDOM['inputTensor'+input].innerText = inputs[item][input];
       }
     }
+  }
 
-    const inputs = json.userDefinedMetadata.signature.inputs;
+  const outputs = json.userDefinedMetadata.signature.outputs;
+  for(const item in outputs){
+    for(const output in outputs[item]){
+      if(output === 'tensorShape'){
+        let st = ""
+        for(const d in outputs[item][output]['dim']){
+          st = st.concat(outputs[item][output]['dim'][d]['size'], ', ');
+        }
+        jsonDOM['outputTensortensorShape'].innerText = st;
+      } else {
+        jsonDOM['outputTensor'+output].innerText = outputs[item][output];
+      }
+    }
     
-    for(const item in inputs){
-      for(const input in inputs[item]){
-        if(input === 'tensorShape'){
-          let st = ""
-          for(const d in inputs[item][input]['dim']){
-            st = st.concat(inputs[item][input]['dim'][d]['size'], ', ');
-          }
-          jsonDOM['inputTensortensorShape'].innerText = st;
-        } else {
-          jsonDOM['inputTensor'+input].innerText = inputs[item][input];
-        }
-      }
-    }
-
-    const outputs = json.userDefinedMetadata.signature.outputs;
-    for(const item in outputs){
-      for(const output in outputs[item]){
-        if(output === 'tensorShape'){
-          let st = ""
-          for(const d in outputs[item][output]['dim']){
-            st = st.concat(outputs[item][output]['dim'][d]['size'], ', ');
-          }
-          jsonDOM['outputTensortensorShape'].innerText = st;
-        } else {
-          jsonDOM['outputTensor'+output].innerText = outputs[item][output];
-        }
-      }
-      
-    }
-  };
-  jsonReader.readAsText(blob);
+  }
+  return input_shape;
 }
-
-
 
 const weightsFilesElement = document.getElementById('weights-files');
 weightsFilesElement.addEventListener('change', evt => {
@@ -330,7 +326,7 @@ function processVideo(videoElement){
       let begin = Date.now();
       cap.read(frame);
 
-      preprocessImageCV2(frame, dst, [videoElement.width, videoElement.height], 256, downUpscaleBox.checked, greyscaleBox.checked, brightnessBox.checked);
+      preprocessImageCV2(frame, dst, [videoElement.width, videoElement.height], 256, downUpscaleBox.checked, greyscaleBox.checked, brightnessBox.checked, desaturateBox.checked);
       cv.imshow(outputCV2Video, dst);
 
       predict(outputCV2Video, outputVideo);
@@ -351,7 +347,7 @@ function processImage(imgElement, outputCanvas){
   let img = cv.imread(imgElement);
   let dst = new cv.Mat();
 
-  preprocessImageCV2(img, dst, [imgElement.width, imgElement.height], 256, downUpscaleBox.checked, greyscaleBox.checked, brightnessBox.checked);
+  preprocessImageCV2(img, dst, [imgElement.width, imgElement.height], 256, downUpscaleBox.checked, greyscaleBox.checked, brightnessBox.checked, desaturateBox.checked);
   cv.imshow(outputCanvas, dst);
 
   img.delete();
