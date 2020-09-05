@@ -20,11 +20,17 @@ let userModel= {
   weights: null,
 }
 
+// Text Outputs:
 const statusElement = document.getElementById('status');
-const status = msg => statusElement.innerText = msg;
+const status = (msg, state) => {
+  statusElement.classList = "";
+  statusElement.innerText = msg;
+  statusElement.classList.add(state);
+}
 const errorsElement = document.getElementById('errors');
 const errors = msg => errorsElement.innerText = msg;
 
+// Visual I/O
 const img = document.getElementById('test_img');
 const vid = document.getElementById('test_vid');
 const imgBtn = document.getElementById('image_button');
@@ -37,6 +43,7 @@ const outputVideo = document.getElementById('output_video_canvas');
 const modelSelect = document.getElementById('model_select');
 
 // STATS
+const backendElement = document.getElementById('backend');
 const model_upload_time_text = document.getElementById('model_upload_time');
 const recent_inference_time_text = document.getElementById('recent_inference_time');
 const average_inference_time_text = document.getElementById('average_inference_time');
@@ -45,6 +52,7 @@ const fps_text = document.getElementById('fps');
 let inference_count = 0;
 let total_inference_time = 0;
 let average_inference_time = 0;
+ 
 // Stats tf.Memory()
 const tfMemoryDOM = {
   tfnumBytes : document.getElementById('tfMemNumBytes'),
@@ -84,11 +92,11 @@ function init(){
 let model;
 async function loadModel(modelID) {
   if(model){
-    status('Clearing previous model...');
+    status('Clearing previous model...', 'loading');
     model.dispose();
   }
 
-  status('Loading model...');
+  status('Loading model...', 'loading');
 
   const startTime = performance.now();
   try{
@@ -99,12 +107,14 @@ async function loadModel(modelID) {
       model = await tf.loadGraphModel(MODELS[modelID], {strict: true});
     }
   } catch (err){
-    status("Error loading model!");
+    status("Error loading model!", 'bad');
     errors(err);
     console.log(err);
     return;
   }
 
+  // parseJSON() populates DOM elements for GUI output and
+  // returns the input tensor shape.
   MODEL_INPUT_SHAPE =  parseJSON(model.artifacts).map(dim => Math.abs(dim.size));
 
   model.predict(tf.zeros(MODEL_INPUT_SHAPE)).dispose();
@@ -112,11 +122,13 @@ async function loadModel(modelID) {
   const totalTime = performance.now() - startTime;
   model_upload_time_text.innerText = totalTime;
 
-  status('Model Loaded Successfully.');
+  status('Model Loaded Successfully.', 'good');
   MODEL_LOADED = true;
 
-  const tfMemoryOutput = tf.memory();
+  backendElement.innerText = tf.getBackend();
 
+  // Populate DOM Output with tfMemory details:
+  const tfMemoryOutput = tf.memory();
   for(const item in tfMemoryOutput){
     const selector = 'tf' + item;
     tfMemoryDOM[selector].innerText = tfMemoryOutput[item];
@@ -127,15 +139,15 @@ async function predict(imgElement, outputCanvas) {
   if(!MODEL_LOADED) {
     init(DEFAULT_MODEL);
   } else {
-    status('Inferencing...');
+    status('Inferencing...', 'loading');
 
     // The first start time includes the time it takes to extract the image
     // from the HTML and preprocess it, in additon to the predict() call.
     const startTime = performance.now();
     let startTime2;
     const logits = tf.tidy(() => {
-      // This preprocesses the image and returns the model prediction
-      // as a tf.Tensor.
+      // This function preprocesses the image and returns the model
+      // prediction as a tf.Tensor.
 
       const img = tf.browser.fromPixels(imgElement, MODEL_INPUT_SHAPE[3]).toFloat();
 
@@ -157,8 +169,7 @@ async function predict(imgElement, outputCanvas) {
     const preprocessTime = endTime - startTime2;
     updateInferenceTime(totalTime);
     image_preprocess_time_text.innerText = preprocessTime;
-    status('Finished Inferencing.');
-
+    status('Finished Inferencing.', 'good');
 
     tf.browser.toPixels(output, outputCanvas);
   }
@@ -169,8 +180,6 @@ async function postProcessTF(logits){
     const scale = tf.scalar(0.5);
     const squeezed = logits.squeeze().mul(scale).add(scale);
     const resized = tf.image.resizeBilinear(squeezed, [IMAGE_SIZE, IMAGE_SIZE]);
-    //const output = resized.mul(scale).add(scale);
-
     return resized;
   })
 }
@@ -232,7 +241,7 @@ jsonFileElement.addEventListener('change', evt => {
   userModel.json = files[0];
 
   modelSelect.value = 'User Upload';
-  status('Successfully loaded model JSON.');
+  status('Successfully loaded model JSON.', 'good');
 });
 
 function parseJSON(json){
@@ -302,7 +311,7 @@ weightsFilesElement.addEventListener('change', evt => {
   }
   userModel.weights = files;
   modelSelect.value = 'User Upload';
-  status('Successfully loaded model weights.');
+  status('Successfully loaded model weights.', 'good');
 });
 
 function processVideo(videoElement){

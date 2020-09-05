@@ -14,7 +14,6 @@
           <h3>TFJS Model Analyser and Benchmarking</h3>
         </div>
 
-        <h4>Stats</h4>
         <div class="container-upload">
           <div class="file-container">
             Choose a Model:
@@ -31,6 +30,17 @@
           </div>
         </div>
 
+        <h4>Stats</h4>
+        <div class="container-stats">
+          <table>
+            <tr>
+              <th>Tensorflow Info</th>
+            <tr>
+              <td>Backend:</td>
+              <td id="backend">-</td>
+            </tr>
+          </table>
+        </div>
         <div class="container-stats">
           <table>
             <tr>
@@ -195,7 +205,7 @@
       <div class="container">
         <h4>Video</h4>
         <div class="container-output">
-          <div class="item">
+          <div class="item video">
             <video id="test_vid" src="test_vids/02.mp4" width=512 height=384 muted controls> </video>
             <button type="button" id="video_button">Process Video</button>
           </div>
