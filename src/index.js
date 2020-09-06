@@ -5,6 +5,7 @@ const MODELS = {
   'webcam2flower_uncompressed' : 'models/webcam2flower/uncompressed/model.json',
   'webcam2flower_uint8_compressed' : 'models/webcam2flower/uint8_compressed/model.json',
   'greyscale2flower' : 'models/greyscale2flower/uncompressed/model.json',
+  'greyscale2clouds' : 'models/clouds/model.json',
   'User Upload' : 'NULL',
 };
 
@@ -69,6 +70,7 @@ const desaturateBox = document.getElementById('desaturate_checkbox');
 const greyscaleBox = document.getElementById('greyscale_checkbox');
 const downUpscaleBox = document.getElementById('downupscale_checkbox');
 const brightnessBox = document.getElementById('brightness_checkbox');
+const invertBox = document.getElementById('invert_checkbox');
 
 function updateInferenceTime(inferenceTime){
   inference_count++;
@@ -131,7 +133,8 @@ async function loadModel(modelID) {
   const tfMemoryOutput = tf.memory();
   for(const item in tfMemoryOutput){
     const selector = 'tf' + item;
-    tfMemoryDOM[selector].innerText = tfMemoryOutput[item];
+    if(item.includes('Bytes')) tfMemoryDOM[selector].innerText = tfMemoryOutput[item] * 1e-6;
+    else tfMemoryDOM[selector].innerText = tfMemoryOutput[item];
   }
 };
 
@@ -333,7 +336,7 @@ function processVideo(videoElement){
       let begin = Date.now();
       cap.read(frame);
 
-      preprocessImageCV2(frame, dst, [videoElement.width, videoElement.height], 256, downUpscaleBox.checked, greyscaleBox.checked, brightnessBox.checked, desaturateBox.checked);
+      preprocessImageCV2(frame, dst, [videoElement.width, videoElement.height], 256, downUpscaleBox.checked, greyscaleBox.checked, brightnessBox.checked, desaturateBox.checked, invertBox.checked);
       cv.imshow(outputCV2Video, dst);
 
       predict(outputCV2Video, outputVideo);
@@ -354,14 +357,14 @@ function processImage(imgElement, outputCanvas){
   let img = cv.imread(imgElement);
   let dst = new cv.Mat();
 
-  preprocessImageCV2(img, dst, [imgElement.width, imgElement.height], 256, downUpscaleBox.checked, greyscaleBox.checked, brightnessBox.checked, desaturateBox.checked);
+  preprocessImageCV2(img, dst, [imgElement.width, imgElement.height], 256, downUpscaleBox.checked, greyscaleBox.checked, brightnessBox.checked, desaturateBox.checked, invertBox.checked);
   cv.imshow(outputCanvas, dst);
 
   img.delete();
   dst.delete();
 }
 
-function preprocessImageCV2(cv2mat, dst, size, targetSize=256, downUpscale, greyscale, brightness, desaturate){
+function preprocessImageCV2(cv2mat, dst, size, targetSize=256, downUpscale, greyscale, brightness, desaturate, invert){
   let output = cv2mat.clone();
 
   if(size[0] !== 256 || size[1] !== 256){
@@ -376,9 +379,11 @@ function preprocessImageCV2(cv2mat, dst, size, targetSize=256, downUpscale, grey
   const dsize = new cv.Size(smallSize, smallSize);
   const usize = new cv.Size(targetSize, targetSize);
 
-  if(downUpscale){
-    cv.resize(output, output, dsize, 0, 0, cv.INTER_AREA); // Downscale
-    cv.resize(output, output, usize, 0, 0, cv.INTER_CUBIC); // Upscale
+  if(greyscale){
+    cv.cvtColor(output, output, cv.COLOR_RGB2GRAY, 0);
+  }
+  if(invert){
+    cv.bitwise_not(output, output);
   }
   if(desaturate){
     cv.threshold(output, output, 150, 200, cv.THRESH_TRUNC); // Desaturate
@@ -387,9 +392,11 @@ function preprocessImageCV2(cv2mat, dst, size, targetSize=256, downUpscale, grey
   if(brightness){
     cv.convertScaleAbs(output, output, 2, 75);
   }
-  if(greyscale){
-    cv.cvtColor(output, output, cv.COLOR_RGB2GRAY, 0);
+  if(downUpscale){
+    cv.resize(output, output, dsize, 0, 0, cv.INTER_AREA); // Downscale
+    cv.resize(output, output, usize, 0, 0, cv.INTER_CUBIC); // Upscale
   }
+
   //cv.imshow(outputCV2Video, dst);
   output.copyTo(dst);
   output.delete();
