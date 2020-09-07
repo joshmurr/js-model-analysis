@@ -320,7 +320,7 @@ function processVideo(videoElement){
 
   let dst = new cv.Mat();
 
-  const FPS = 25;
+  const FPS = 1;
   let total_delay=0;
   let i=0;
   function stream(){
