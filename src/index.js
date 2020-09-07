@@ -6,6 +6,7 @@ const MODELS = {
   'webcam2flower_uint8_compressed' : 'models/webcam2flower/uint8_compressed/model.json',
   'greyscale2flower' : 'models/greyscale2flower/uncompressed/model.json',
   'greyscale2clouds' : 'models/clouds/model.json',
+  'greyscale2forest' : 'models/forest/model.json',
   'User Upload' : 'NULL',
 };
 
