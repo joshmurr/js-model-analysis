@@ -10,3 +10,9 @@ profiles
 dist/opencv
 dist/test_pics
 dist/test_vids
+site-in-use.mp4
+*.zip
+*.tar
+*.tar.gz
+.DS_Store
+dist/test_vids/02.mp4

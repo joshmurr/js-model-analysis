@@ -1,16 +1,17 @@
 import * as tf from '@tensorflow/tfjs';
 
 const MODELS = {
-  'Flowers_Uncompressed_H5' : 'models/h5_graph/model.json',
-  'webcam2flower_uncompressed' : 'models/webcam2flower/uncompressed/model.json',
-  'webcam2flower_uint8_compressed' : 'models/webcam2flower/uint8_compressed/model.json',
-  'greyscale2flower' : 'models/greyscale2flower/uncompressed/model.json',
-  'greyscale2clouds' : 'models/clouds/model.json',
-  'greyscale2forest' : 'models/forest/model.json',
+  // 'Flowers_Uncompressed_H5' : 'models/desaturate2flower/model.json',
+  // 'webcam2flower_uncompressed' : 'models/webcam2flower/uncompressed/model.json',
+  // 'webcam2flower_uint8_compressed' : 'models/webcam2flower/uint8_compressed/model.json',
+  'greyscale2flowers' : 'models/greyscale2flowers/uncompressed/model.json',
+  // 'greyscale2clouds' : 'models/greyscale2clouds/model.json',
+  // 'greyscale2forest' : 'models/greyscale2forest/model.json',
   'User Upload' : 'NULL',
 };
 
-const DEFAULT_MODEL = 'Flowers_Uncompressed_H5';
+// const DEFAULT_MODEL = 'Flowers_Uncompressed_H5';
+const DEFAULT_MODEL = 'greyscale2flowers';
 const IMAGE_SIZE = 256;
 let MODEL_INPUT_SHAPE;
 
@@ -37,6 +38,7 @@ const img = document.getElementById('test_img');
 const vid = document.getElementById('test_vid');
 const imgBtn = document.getElementById('image_button');
 const vidBtn = document.getElementById('video_button');
+const camBtn = document.getElementById('webcam_button');
 const modelBtn = document.getElementById('model_button');
 const outputImage = document.getElementById('output_image_canvas');
 const outputCV2Image = document.getElementById('cv2_image_canvas');
@@ -324,7 +326,7 @@ function processVideo(videoElement){
 
   let dst = new cv.Mat();
 
-  const FPS = 1;
+  const FPS = 25;
   let total_delay=0;
   let i=0;
   function stream(){
@@ -352,6 +354,17 @@ function processVideo(videoElement){
     }
   }
  setTimeout(stream, 0); 
+}
+
+function initWebcam(video){
+	navigator.mediaDevices.getUserMedia({ video: true, audio: false })
+		.then(function(stream) {
+				video.srcObject = stream;
+				video.play();
+		})
+		.catch(function(err) {
+				console.log("An error occurred loading the webcam! " + err);
+		});
 }
 
 function processImage(imgElement, outputCanvas){
@@ -431,9 +444,15 @@ imgBtn.addEventListener('click', e => {
   }
 });
 vidBtn.addEventListener('click', e => {
+	vid.srcObject = null;
   vid.play();
   videoPlaying = true;
   processVideo(vid)
+});
+camBtn.addEventListener('click', e => {
+	initWebcam(vid);
+	videoPlaying = true;
+	processVideo(vid)
 });
 
 init();

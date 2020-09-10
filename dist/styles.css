@@ -116,3 +116,6 @@ table {
 td {
   width: 50%;
 }
+button {
+  display: inline-block;
+}
