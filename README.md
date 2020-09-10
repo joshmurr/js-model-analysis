@@ -55,9 +55,7 @@ Once completed, in your chosen output folder you should see a `model.json` file 
 
 A video of the site in use:
 
-<div style="display: flex; justify-items: center;">
 [![Site in Use](https://img.youtube.com/vi/JsSXUqzfHrY/0.jpg)](https://www.youtube.com/watch?v=JsSXUqzfHrY)
-</div>
 
 <!-- -->
 
