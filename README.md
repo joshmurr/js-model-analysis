@@ -39,7 +39,7 @@ From your Tensorflow Python script save the model in the `.h5` format.
 model.save('model.h5')
 ```
 
-In theory this will work with any model which takes a 256x256 image as an input. The channel dimension is adapted as the model loads so RGB or greyscale will work. However I have only tested it with _pix2pix_ style models trained using [Auto-pix2pix][auto-p2p] so I can't say for sure just yet.
+We're only interested in the generator of the _pix2pix_ model so any generative model which matches the input and output dimensions (256x256x[1..3]) should work. The channel dimension is adapted as the model loads so RGB or greyscale will work. However I have only tested it with _pix2pix_ style models trained using [Auto-pix2pix][auto-p2p] so I can't say for sure just yet.
 
 [Follow the instructions to install TensorflowJS_Converter](https://github.com/tensorflow/tfjs/tree/master/tfjs-converter). From a virtual environment run `tensorflowjs_wizard`, or this command should work:
 
