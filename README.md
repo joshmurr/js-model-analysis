@@ -2,7 +2,7 @@
 
 A web tool to upload pre-trained GANs and to analyse how well the models perform on the web through simple benchmarking and analysis tools. The overall aim to test different methods of model compression and ways of acheiving real-time interaction on the web.
 
-[Auto-pix2pix](https://github.com/joshmurr/cci-auto-pix2pix) is a version of the [pix2pix](https://arxiv.org/pdf/1611.07004.pdf) model based on [Learning to See](https://arxiv.org/ftp/arxiv/papers/2003/2003.00902.pdf) by Memo Akten et al which set up to quickly protoype generative models for this platform. If you would like to quickly create a dataset from video and train your own model which would be compatible here, see [Auto-pix2pix here](https://github.com/joshmurr/cci-auto-pix2pix).
+[Auto-pix2pix][auto-p2p] is a version of the [pix2pix](https://arxiv.org/pdf/1611.07004.pdf) model based on [Learning to See](https://arxiv.org/ftp/arxiv/papers/2003/2003.00902.pdf) by Memo Akten et al which set up to quickly protoype generative models for this platform. If you would like to quickly create a dataset from video and train your own model which would be compatible here, see [Auto-pix2pix here](https://github.com/joshmurr/cci-auto-pix2pix).
 
 ---
 
@@ -31,6 +31,34 @@ $ npm run dev
 
 ---
 
+### Convert a Pretrained Model to Upload
+
+From your Tensorflow Python script save the model in the `.h5` format.
+
+```python
+model.save('model.h5')
+```
+
+In theory this will work with any model which takes a 256x256 image as an input. The channel dimension is adapted as the model loads so RGB or greyscale will work. However I have only tested it with _pix2pix_ style models trained using [Auto-pix2pix][auto-p2p] so I can't say for sure just yet.
+
+[Follow the instructions to install TensorflowJS_Converter](https://github.com/tensorflow/tfjs/tree/master/tfjs-converter). From a virtual environment run `tensorflowjs_wizard`, or this command should work:
+
+```bash
+tensorflowjs_converter --input_format=keras --output_format=tfjs_graph_model --weight_shard_size_bytes=4194304 {{Path to Model}}.h5 {{Output Path}}
+```
+
+The `tensorflowjs_wizard` provides you with some handy options for compression and other things. If using a model from _Auto-pix2pix_ make sure to choose __Graph Layers__ for the output format.
+
+Once completed, in your chosen output folder you should see a `model.json` file and a bunch of binary files. You should now be able to upload them to the `js-model-analyser` via the menu at the top of the page (uploading `model.json` and the binaries seperately) - then press _load model_.
+
+---
+
 A video of the site in use:
 
+<div style="display: flex; justify-items: center;">
 [![Site in Use](https://img.youtube.com/vi/JsSXUqzfHrY/0.jpg)](https://www.youtube.com/watch?v=JsSXUqzfHrY)
+</div>
+
+<!-- -->
+
+[auto-p2p]: https://github.com/joshmurr/cci-auto-pix2pix
