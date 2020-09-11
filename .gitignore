@@ -8,8 +8,6 @@ video
 *.swp
 profiles
 dist/opencv
-dist/test_pics
-dist/test_vids
 site-in-use.mp4
 *.zip
 *.tar

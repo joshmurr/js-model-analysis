@@ -16,7 +16,7 @@ $ git clone https://github.com/joshmurr/js-model-analysis && cd js-model-analysi
 $ npm install
 
 # Download Sample Model:
-$ mkdir dist/models/greyscale2flowers
+$ mkdir dist/models && mkdir dist/models/greyscale2flowers
 $ wget https://transfer.sh/plchj/greyscale2flowers.tar.gz
 $ tar -xf greyscale2flowers.tar.gz -C dist/models/greyscale2flowers
 
