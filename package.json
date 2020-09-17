@@ -18,6 +18,8 @@
   "devDependencies": {
     "webpack": "^4.44.1",
     "webpack-cli": "^3.3.12",
-    "webpack-dev-server": "^3.11.0"
+    "webpack-dev-server": "^3.11.0",
+    "eslint": "^7.9.0",
+    "prettier": "^2.1.2"
   }
 }
