@@ -167,16 +167,31 @@ export default class OutputGL {
     this._gl.useProgram(this._program);
     this._gl.bindVertexArray(this._vao);
 
-    this._gl.texImage2D(
+    /*
+     *this._gl.texImage2D(
+     *  this._gl.TEXTURE_2D,
+     *  0,
+     *  this._gl.RGB32F,
+     *  256,
+     *  256,
+     *  0,
+     *  this._gl.RGB,
+     *  this._gl.FLOAT,
+     *  data
+     *);
+     */
+
+    this._gl.texSubImage2D(
       this._gl.TEXTURE_2D,
       0,
-      this._gl.RGB32F,
-      256,
-      256,
       0,
+      0,
+      256,
+      256,
       this._gl.RGB,
       this._gl.FLOAT,
-      data
+      data,
+      0
     );
 
     this._gl.drawArrays(this._gl.TRIANGLES, 0, this._verts.length / 2);
