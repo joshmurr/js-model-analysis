@@ -320,7 +320,7 @@ weightsFilesElement.addEventListener('change', evt => {
   status('Successfully loaded model weights.', 'good');
 });
 
-function processVideo(videoElement){
+async function processVideo(videoElement){
   let cap = new cv.VideoCapture(videoElement);
   let frame = new cv.Mat(videoElement.height, videoElement.width, cv.CV_8UC4); // CORRECT
 
@@ -329,7 +329,7 @@ function processVideo(videoElement){
   const FPS = 25;
   let total_delay=0;
   let i=0;
-  function stream(){
+  async function stream(){
     try{
       if(!videoPlaying){
         dst.delete();
@@ -342,7 +342,7 @@ function processVideo(videoElement){
       preprocessImageCV2(frame, dst, [videoElement.width, videoElement.height], 256, downUpscaleBox.checked, greyscaleBox.checked, brightnessBox.checked, desaturateBox.checked, invertBox.checked);
       cv.imshow(outputCV2Video, dst);
 
-      predict(outputCV2Video, outputVideo);
+      await predict(outputCV2Video, outputVideo);
 
       let delay = 1000/FPS - (Date.now() - begin);
       total_delay+=delay;
@@ -406,7 +406,7 @@ function preprocessImageCV2(cv2mat, dst, size, targetSize=256, downUpscale, grey
   if(brightness){
     cv.convertScaleAbs(output, output, 2, 75);
   }
-  if(downUpscale){
+  if(downUpscale) {
     cv.resize(output, output, dsize, 0, 0, cv.INTER_AREA); // Downscale
     cv.resize(output, output, usize, 0, 0, cv.INTER_CUBIC); // Upscale
   }
@@ -418,7 +418,7 @@ function preprocessImageCV2(cv2mat, dst, size, targetSize=256, downUpscale, grey
 
 modelBtn.addEventListener('click', e => {
   loadModel(modelSelect.options[modelSelect.selectedIndex].value)
-});
+}, false);
 
 vid.onplay = () => {
   videoPlaying = true;
