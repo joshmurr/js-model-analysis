@@ -24,17 +24,13 @@ export default class OutputGL {
     in vec2 v_texcoord;
     uniform sampler2D u_texture;
     out vec4 outColor;
-     
+
     void main() {
-      outColor = texture(u_texture, v_texcoord);
+      outColor = texture(u_texture, (v_texcoord * vec2(0.5, -0.5)) + vec2(0.5));
     }
     `;
     this._verts = [-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1];
-    this._textureCoordinates = [0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0];
-
-    this._normals = [0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1];
-    // For use with TRIANGLES
-    this._indices = [0, 1, 2, 0, 2, 3];
+    this._textureCoordinates = [0, 0, 1, 0, 1, 1, 0, 1];
 
     this._program = this.createProgram(
       this._gl,
@@ -83,7 +79,7 @@ export default class OutputGL {
     );
 
     // Texture
-    var ext = this._gl.getExtension('OES_texture_float');
+    //var ext = this._gl.getExtension('OES_texture_float');
     this._textureLocation = this._gl.getUniformLocation(
       this._program,
       'u_texture'
@@ -116,12 +112,12 @@ export default class OutputGL {
     this._gl.texParameteri(
       this._gl.TEXTURE_2D,
       this._gl.TEXTURE_WRAP_S,
-      this._gl.CLAMP_TO_EDGE
+      this._gl.REPEAT
     );
     this._gl.texParameteri(
       this._gl.TEXTURE_2D,
       this._gl.TEXTURE_WRAP_T,
-      this._gl.CLAMP_TO_EDGE
+      this._gl.REPEAT
     );
 
     this._gl.bindVertexArray(null);
@@ -171,10 +167,6 @@ export default class OutputGL {
     this._gl.useProgram(this._program);
     this._gl.bindVertexArray(this._vao);
 
-    //this._gl.uniform1i(this._textureLocation, 0);
-
-    // Update Texture with Tensor data
-    //this._gl.bindTexture(this._gl.TEXTURE_2D, this._texture);
     this._gl.texImage2D(
       this._gl.TEXTURE_2D,
       0,
@@ -188,6 +180,5 @@ export default class OutputGL {
     );
 
     this._gl.drawArrays(this._gl.TRIANGLES, 0, this._verts.length / 2);
-    //this._gl.bindTexture(this._gl.TEXTURE_2D, null);
   }
 }
