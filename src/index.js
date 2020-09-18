@@ -58,12 +58,10 @@ const model_upload_time_text = document.getElementById('model_upload_time');
 
 const image_cv2_preprocess = document.getElementById('image_cv2_preprocess');
 const image_model_inference = document.getElementById('image_model_inference');
-const image_to_canvas_type = document.getElementById('image_to_canvas_type');
 const image_to_canvas = document.getElementById('image_to_canvas');
 
 const video_cv2_preprocess = document.getElementById('video_cv2_preprocess');
 const video_model_inference = document.getElementById('video_model_inference');
-const video_to_canvas_type = document.getElementById('video_to_canvas_type');
 const video_to_canvas = document.getElementById('video_to_canvas');
 
 const fps_text = document.getElementById('fps');
