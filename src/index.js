@@ -376,7 +376,7 @@ function processVideo(videoElement) {
       );
       cv.imshow(outputCV2Video, dst);
 
-      await predict(outputCV2Video, outputVideo);
+      predict(outputCV2Video, outputVideo);
 
       let delay = 1000 / FPS - (Date.now() - begin);
       total_delay += delay;
