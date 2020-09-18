@@ -1,40 +1,44 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <meta charset="utf-8">
+    <meta charset="utf-8" />
     <title>***</title>
-    <link rel="stylesheet" type="text/css" href="styles.css">
+    <link rel="stylesheet" type="text/css" href="styles.css" />
   </head>
   <body>
     <div class="body-container">
-
-      
       <div class="container">
         <div class="container-output">
           <h3>TFJS Model Analyser and Benchmarking</h3>
         </div>
-
         <div class="container-upload">
           <div class="file-container">
             Choose a Model:
             <select id="model_select">
               <!-- Populated in JS -->
             </select>
-            <div class="file-container">
-              Upload Model JSON File: <input type="file" id="json-file" name="files[]" />
-            </div>
-            <div class="file-container">
-              Upload Model Weights as Binaries: <input type="file" id="weights-files" name="files[]" multiple />
-            </div>
+          </div>
+
+          <div class="file-container">
+            Upload Model JSON File:
+            <input type="file" id="json-file" name="files[]" />
+          </div>
+
+          <div class="file-container">
+            Upload Model Weights as Binaries:
+            <input type="file" id="weights-files" name="files[]" multiple />
+          </div>
+
+          <div class="file-container">
             <button type="button" id="model_button">Load Model</button>
           </div>
         </div>
-
         <h4>Stats</h4>
         <div class="container-stats">
           <table>
             <tr>
               <th>Tensorflow Info</th>
+            </tr>
             <tr>
               <td>Backend:</td>
               <td id="backend">-</td>
@@ -45,6 +49,7 @@
           <table>
             <tr>
               <th>Model Info from model.json</th>
+            </tr>
             <tr>
               <td>Converted by:</td>
               <td id="convertedBy">-</td>
@@ -82,35 +87,33 @@
               <td id="outputTensorShape">-</td>
             </tr>
           </table>
-
         </div>
-
         <div class="container-stats">
           <table>
             <tr>
-              <td>Status: </td>
+              <td>Status:</td>
               <td id="status">-</td>
             </tr>
             <tr>
-              <td>Errors: </td>
+              <td>Errors:</td>
               <td id="errors">-</td>
             </tr>
             <tr>
               <td>Model Upload Time:</td>
               <td id="model_upload_time">-</td>
             </tr>
-            <tr>
-              <td>Image Preprocess Time:</td>
-              <td id="image_preprocess_time">-</td>
-            </tr>
-            <tr>
-              <td>Most Recent Inference Time:</td>
-              <td id="recent_inference_time">-</td>
-            </tr>
-            <tr>
-              <td>Average Inference Time:</td>
-              <td id="average_inference_time">-</td>
-            </tr>
+            <!--<tr>-->
+              <!--<td>Image Preprocess Time:</td>-->
+              <!--<td id="image_preprocess_time">-</td>-->
+            <!--</tr>-->
+            <!--<tr>-->
+              <!--<td>Most Recent Inference Time:</td>-->
+              <!--<td id="recent_inference_time">-</td>-->
+            <!--</tr>-->
+            <!--<tr>-->
+              <!--<td>Average Inference Time:</td>-->
+              <!--<td id="average_inference_time">-</td>-->
+            <!--</tr>-->
             <tr>
               <td>Video Frames Per Second:</td>
               <td id="fps">-</td>
@@ -149,7 +152,6 @@
             </tr>
           </table>
         </div>
-
         <div class="container-stats">
           <table>
             <tr>
@@ -157,84 +159,143 @@
             </tr>
             <tr>
               <td>Grayscale</td>
-              <td><input type="checkbox" id="greyscale_checkbox"></td>
+              <td><input type="checkbox" id="greyscale_checkbox" /></td>
             </tr>
             <tr>
               <td>Desaturate</td>
-              <td><input type="checkbox" id="desaturate_checkbox"></td>
+              <td><input type="checkbox" id="desaturate_checkbox" /></td>
             </tr>
             <tr>
               <td>Downscale/Upscale</td>
-              <td><input type="checkbox" id="downupscale_checkbox"></td>
+              <td><input type="checkbox" id="downupscale_checkbox" /></td>
             </tr>
             <tr>
               <td>Brightness</td>
-              <td><input type="checkbox" id="brightness_checkbox"></td>
+              <td><input type="checkbox" id="brightness_checkbox" /></td>
             </tr>
             <tr>
               <td>Invert</td>
-              <td><input type="checkbox" id="invert_checkbox"></td>
+              <td><input type="checkbox" id="invert_checkbox" /></td>
             </tr>
           </table>
         </div>
       </div>
-
       <!--IMAGES -->
       <div class="container">
         <h4>Image</h4>
         <div class="container-output">
           <div class="item">
-            <img id="test_img" src="test_pics/0001.jpg" width=256 height=256 />
+            <img
+              id="test_img"
+              src="test_pics/0001.jpg"
+              width="256"
+              height="256"
+            />
             <button type="button" id="image_button">Process Image</button>
           </div>
           <div class="item">
-            <canvas id="cv2_image_canvas" width=256 height=256> </canvas>
+            <canvas id="cv2_image_canvas" width="256" height="256"></canvas>
             <p>CV2 Preprocessing</p>
           </div>
           <div class="item">
-            <canvas id="output_image_canvas" width=256 height=256> </canvas>
+            <canvas id="output_image_canvas" width="256" height="256"></canvas>
             <p>Output Image</p>
           </div>
         </div>
-
         <div class="container-upload">
+          <table>
+            <tr>
+              <td>CV2 Preprocess</td>
+              <td id="image_cv2_preprocess">-</td>
+            </tr>
+            <tr>
+              <td>Model Inference</td>
+              <td id="image_model_inference">-</td>
+            </tr>
+            <tr>
+              <td>Output to Canvas (<span id=image_to_canvas_type">&lt;type&gt;</type></span>)</td>
+              <td id="image_to_canvas">-</td>
+            </tr>
+          </table>
           <div class="file-container">
-            Upload an image: <input type="file" id="image-file" name="files[]" multiple />
+            Upload an image:
+            <input type="file" id="image-file" name="files[]" multiple />
           </div>
         </div>
       </div>
-
-
       <!--VIDEO -->
       <div class="container">
         <h4>Video</h4>
         <div class="container-output">
           <div class="item video">
-            <video id="test_vid" src="test_vids/02.mp4" width=512 height=384 muted controls> </video>
-						<div>
-							<button type="button" id="video_button">Process Video</button>
-							<button type="button" id="webcam_button">Process Webcam</button>
-						</div>
+            <video
+              id="test_vid"
+              src="test_vids/02.mp4"
+              width="512"
+              height="384"
+              muted
+              controls="false"
+            ></video>
+            <div>
+              <button type="button" id="video_button">Process Video</button>
+              <button type="button" id="webcam_button">Process Webcam</button>
+            </div>
           </div>
           <div class="item">
-            <canvas style="display:block" id="cv2_video_canvas" width=256 height=256></canvas>
+            <canvas
+              style="display: block"
+              id="cv2_video_canvas"
+              width="256"
+              height="256"
+            ></canvas>
             <p>CV2 Preprocessing</p>
           </div>
           <div class="item">
-            <canvas style="display:block" id="output_video_canvas" width=256 height=256></canvas>
+            <canvas
+              style="display: block"
+              id="output_video_tf"
+              width="256"
+              height="256"
+            ></canvas>
             <p>Output Video</p>
           </div>
+          <div class="item">
+            <canvas
+              style="display: block"
+              id="output_video_gl"
+              width="256"
+              height="256"
+            ></canvas>
+            <p>Output Video WebGL</p>
+          </div>
         </div>
-
         <div class="container-upload">
+          <table>
+            <tr>
+              <td>CV2 Preprocess</td>
+              <td id="video_cv2_preprocess">-</td>
+            </tr>
+            <tr>
+              <td>Model Inference</td>
+              <td id="video_model_inference">-</td>
+            </tr>
+            <tr>
+              <td>Output to Canvas (<span id=video_to_canvas_type">&lt;type&gt;</type></span>)</td>
+              <td id="video_to_canvas">-</td>
+            </tr>
+            <tr>
+              <td>Output via WebGL</td>
+              <td><input type="checkbox" id="gl_checkbox" /></td>
+            </tr>
+          </table>
           <div class="file-container">
-            Upload a video: <input type="file" id="video-file" name="files[]" multiple />
+            Upload a video:
+            <input type="file" id="video-file" name="files[]" multiple />
           </div>
         </div>
       </div>
     </div>
-
     <script src="./main.js"></script>
     <script async src="opencv/opencv-3.4.0.js" type="text/javascript"></script>
-    <body>
+  </body>
 </html>
