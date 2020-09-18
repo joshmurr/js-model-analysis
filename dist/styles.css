@@ -14,14 +14,13 @@ body {
   justify-items: center;
 }
 
-.body-container{
+.body-container {
   width: 800px;
   display: grid;
   justify-items: center;
   grid-template-columns: 1fr;
   grid-template-rows: auto;
   grid-gap: 20px;
-
 }
 
 .container {
@@ -33,23 +32,32 @@ body {
   border-radius: 3px;
 }
 
-.container-output{
+.container-output {
   width: 100%;
   display: flex;
   flex-wrap: wrap;
   padding: 0.2rem;
   justify-content: space-around;
   align-items: center;
-  background-color: #EEE;
+  background-color: #eee;
 }
 
-.container-upload{
+.file-container {
+  display: flex;
+  justify-content: space-between;
+}
+
+#model_button {
   width: 100%;
-  background-color: #EEE;
 }
 
-.container-stats{
-  background-color: #DDD;
+.container-upload {
+  width: 100%;
+  background-color: #eee;
+}
+
+.container-stats {
+  background-color: #ddd;
   display: grid;
   grid-template-columns: 1fr;
   grid-template-rows: auto;
@@ -61,32 +69,37 @@ body {
   padding: 0;
 }
 
-.status{
+.status {
   border: 1px solid;
   color: tomato;
 }
 
-.item{
+.item {
   display: grid;
   grid-template-columns: 1fr;
   grid-template-rows: auto;
   justify-items: center;
 }
 
-.video{
+.video {
   width: 100%;
 }
 
-.title{
-  background-color: #DDD;
+.title {
+  background-color: #ddd;
   text-align: center;
 }
 
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   margin: 0 0 5px 0;
 }
 
-.status-text{
+.status-text {
 }
 
 #errors {
@@ -97,15 +110,15 @@ h1, h2, h3, h4, h5, h6 {
   background-color: darkgrey;
 }
 
-.good{
+.good {
   background-color: lightgreen;
 }
 
-.loading{
+.loading {
   background-color: lemonchiffon;
 }
 
-.bad{
+.bad {
   background-color: tomato;
 }
 

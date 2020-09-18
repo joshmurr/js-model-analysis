@@ -1,5 +1,5 @@
 import * as tf from '@tensorflow/tfjs';
-import { convertToTensor } from '@tensorflow/tfjs-core/dist/tensor_util_env.js';
+//import { convertToTensor } from '@tensorflow/tfjs-core/dist/tensor_util_env.js';
 import OutputGL from './outputGL.js';
 
 const MODELS = {
@@ -45,24 +45,27 @@ const modelBtn = document.getElementById('model_button');
 const outputImage = document.getElementById('output_image_canvas');
 const outputCV2Image = document.getElementById('cv2_image_canvas');
 const outputCV2Video = document.getElementById('cv2_video_canvas');
-const outputVideo = document.getElementById('output_video_canvas');
+const outputVideoTF = document.getElementById('output_video_tf');
+const outputVideoGL = document.getElementById('output_video_gl');
 const modelSelect = document.getElementById('model_select');
 
 // WebGL
-const outputGL = new OutputGL(outputVideo);
+const outputGL = new OutputGL(outputVideoGL);
 
 // STATS
 const backendElement = document.getElementById('backend');
 const model_upload_time_text = document.getElementById('model_upload_time');
-const recent_inference_time_text = document.getElementById(
-  'recent_inference_time'
-);
-const average_inference_time_text = document.getElementById(
-  'average_inference_time'
-);
-const image_preprocess_time_text = document.getElementById(
-  'image_preprocess_time'
-);
+
+const image_cv2_preprocess = document.getElementById('image_cv2_preprocess');
+const image_model_inference = document.getElementById('image_model_inference');
+const image_to_canvas_type = document.getElementById('image_to_canvas_type');
+const image_to_canvas = document.getElementById('image_to_canvas');
+
+const video_cv2_preprocess = document.getElementById('video_cv2_preprocess');
+const video_model_inference = document.getElementById('video_model_inference');
+const video_to_canvas_type = document.getElementById('video_to_canvas_type');
+const video_to_canvas = document.getElementById('video_to_canvas');
+
 const fps_text = document.getElementById('fps');
 let inference_count = 0;
 let total_inference_time = 0;
@@ -87,15 +90,7 @@ const greyscaleBox = document.getElementById('greyscale_checkbox');
 const downUpscaleBox = document.getElementById('downupscale_checkbox');
 const brightnessBox = document.getElementById('brightness_checkbox');
 const invertBox = document.getElementById('invert_checkbox');
-
-function updateInferenceTime(inferenceTime) {
-  inference_count++;
-  total_inference_time += inferenceTime;
-  average_inference_time = total_inference_time / inference_count;
-
-  recent_inference_time_text.innerText = inferenceTime;
-  average_inference_time_text.innerText = average_inference_time;
-}
+const glBox = document.getElementById('gl_checkbox');
 
 function init() {
   for (let model in MODELS) {
@@ -157,20 +152,12 @@ async function loadModel(modelID) {
   }
 }
 
-async function predict(imgElement, outputCanvas) {
+async function predict(imgElement, outputCanvas, gl = false) {
   if (!MODEL_LOADED) {
     init(DEFAULT_MODEL);
   } else {
     status('Inferencing...', 'loading');
-
-    // The first start time includes the time it takes to extract the image
-    // from the HTML and preprocess it, in additon to the predict() call.
-    const startTime = performance.now();
-    let startTime2;
     const logits = tf.tidy(() => {
-      // This function preprocesses the image and returns the model
-      // prediction as a tf.Tensor.
-
       const img = tf.browser
         .fromPixels(imgElement, MODEL_INPUT_SHAPE[3])
         .toFloat();
@@ -179,30 +166,19 @@ async function predict(imgElement, outputCanvas) {
       const normalized = img.sub(offset).div(offset);
 
       const batched = normalized.reshape(MODEL_INPUT_SHAPE);
-
-      startTime2 = performance.now();
       return model.predict(batched);
     });
 
-    // Furthur processing of the model prediction so that we can display in
-    // a HTML canvas.
     const output = await postProcessTF(logits);
 
-    let data = await output.data();
-
-    const endTime = performance.now();
-    const totalTime = endTime - startTime;
-    const preprocessTime = endTime - startTime2;
-    updateInferenceTime(totalTime);
-    image_preprocess_time_text.innerText = preprocessTime;
     status('Finished Inferencing.', 'good');
 
-    //console.log(output);
-
-    //tf.browser.toPixels(output, outputCanvas);
-
-    //outputGL.draw(new Float32Array([Math.sin(inference_count) / 2 + 1, 0, 0]));
-    outputGL.draw(data);
+    if (gl) {
+      let data = await output.data();
+      outputGL.draw(data);
+    } else {
+      tf.browser.toPixels(output, outputCanvas);
+    }
   }
 }
 
@@ -218,23 +194,16 @@ async function postProcessTF(logits) {
 const imageFilesElement = document.getElementById('image-file');
 imageFilesElement.addEventListener('change', (evt) => {
   let files = evt.target.files;
-  // Display thumbnails & issue call to predict each image.
   for (let i = 0, f; (f = files[i]); i++) {
-    // Only process image files (skip non image files)
     if (!f.type.match('image.*')) {
       continue;
     }
     let reader = new FileReader();
     reader.onload = (e) => {
-      // Fill the image & call predict.
-      // let img = document.createElement('img');
       img.src = e.target.result;
       img.width = IMAGE_SIZE;
       img.height = IMAGE_SIZE;
-      img.onload = () => predict(img);
     };
-
-    // Read in the image file as a data URL.
     reader.readAsDataURL(f);
   }
 });
@@ -351,8 +320,6 @@ function processVideo(videoElement) {
   let dst = new cv.Mat();
 
   const FPS = 25;
-  let total_delay = 0;
-  let i = 0;
   function stream() {
     try {
       if (!videoPlaying) {
@@ -360,29 +327,31 @@ function processVideo(videoElement) {
         frame.delete();
         return;
       }
-      let begin = Date.now();
-      cap.read(frame);
 
+      const begin = performance.now();
+
+      cap.read(frame);
       preprocessImageCV2(
         frame,
-        dst,
-        [videoElement.width, videoElement.height],
-        256,
+        outputCV2Video,
         downUpscaleBox.checked,
         greyscaleBox.checked,
         brightnessBox.checked,
         desaturateBox.checked,
         invertBox.checked
       );
-      cv.imshow(outputCV2Video, dst);
 
-      predict(outputCV2Video, outputVideo);
+      const preprocessed = performance.now();
 
-      let delay = 1000 / FPS - (Date.now() - begin);
-      total_delay += delay;
-      if (i % 10 == 0) fps_text.innerText = Math.floor(total_delay / i);
-      i++;
-      setTimeout(stream, delay);
+      predict(outputCV2Video, outputVideoTF, glBox.checked);
+
+      const inferenced = performance.now();
+
+      video_cv2_preprocess.innerText = preprocessed - begin;
+      video_model_inference.innerText = inferenced - preprocessed;
+
+      let delay = 1000 / FPS - (performance.now() - begin);
+      setTimeout(stream, delay); // Force FPS
     } catch (err) {
       console.log(err);
     }
@@ -423,51 +392,38 @@ function initWebcam(video) {
   }
 }
 
-function processImage(imgElement, outputCanvas) {
-  let img = cv.imread(imgElement);
-  let dst = new cv.Mat();
-
-  preprocessImageCV2(
-    img,
-    dst,
-    [imgElement.width, imgElement.height],
-    256,
-    downUpscaleBox.checked,
-    greyscaleBox.checked,
-    brightnessBox.checked,
-    desaturateBox.checked,
-    invertBox.checked
-  );
-  cv.imshow(outputCanvas, dst);
-
-  img.delete();
-  dst.delete();
-}
-
 function preprocessImageCV2(
-  cv2mat,
-  dst,
-  size,
-  targetSize = 256,
+  imgElement,
+  outputCanvas,
   downUpscale,
   greyscale,
   brightness,
   desaturate,
   invert
 ) {
-  let output = cv2mat.clone();
+  let output;
+  let width, height;
+  if (imgElement instanceof HTMLElement) {
+    width = imgElement.width;
+    height = imgElement.height;
+    output = cv.imread(imgElement);
+  } else {
+    width = imgElement.cols;
+    height = imgElement.rows;
+    output = imgElement.clone();
+  }
 
-  if (size[0] !== 256 || size[1] !== 256) {
-    const offset_x = Math.floor((size[0] - targetSize) / 2);
-    const offset_y = Math.floor((size[1] - targetSize) / 2);
-    const mask = new cv.Rect(offset_x, offset_y, targetSize, targetSize);
+  if (width !== 256 || height !== 256) {
+    const offset_x = Math.floor((width - IMAGE_SIZE) / 2);
+    const offset_y = Math.floor((height - IMAGE_SIZE) / 2);
+    const mask = new cv.Rect(offset_x, offset_y, IMAGE_SIZE, IMAGE_SIZE);
 
     output = output.roi(mask);
   }
 
-  const smallSize = Math.floor(targetSize / 24);
+  const smallSize = Math.floor(IMAGE_SIZE / 24);
   const dsize = new cv.Size(smallSize, smallSize);
-  const usize = new cv.Size(targetSize, targetSize);
+  const usize = new cv.Size(IMAGE_SIZE, IMAGE_SIZE);
 
   if (greyscale) {
     cv.cvtColor(output, output, cv.COLOR_RGB2GRAY, 0);
@@ -477,7 +433,6 @@ function preprocessImageCV2(
   }
   if (desaturate) {
     cv.threshold(output, output, 150, 200, cv.THRESH_TRUNC); // Desaturate
-    //cv.cvtColor(dst, dst, cv.COLOR_RGBA2GRAY, 3); // Grayscale
   }
   if (brightness) {
     cv.convertScaleAbs(output, output, 2, 75);
@@ -487,8 +442,7 @@ function preprocessImageCV2(
     cv.resize(output, output, usize, 0, 0, cv.INTER_CUBIC); // Upscale
   }
 
-  //cv.imshow(outputCV2Video, dst);
-  output.copyTo(dst);
+  cv.imshow(outputCanvas, output);
   output.delete();
 }
 
@@ -510,13 +464,27 @@ vid.onpause = () => {
 
 imgBtn.addEventListener('click', (e) => {
   if (img.complete && img.naturalHeight !== 0) {
-    processImage(img, outputCV2Image);
+    const processImg_start = performance.now();
+
+    preprocessImageCV2(
+      img,
+      outputCV2Image,
+      downUpscaleBox.checked,
+      greyscaleBox.checked,
+      brightnessBox.checked,
+      desaturateBox.checked,
+      invertBox.checked
+    );
+
+    const processImg_end = performance.now();
+
     predict(outputCV2Image, outputImage);
+
+    const infImg_end = performance.now() - processImg_end;
+    image_cv2_preprocess.innerText = processImg_end - processImg_start;
+    image_model_inference.innerText = infImg_end;
   } else {
-    img.onload = () => {
-      processImage(img, outputCV2Image);
-      predict(outputCV2Image, outputImage);
-    };
+    console.warn('Image not yet loaded.');
   }
 });
 vidBtn.addEventListener('click', (e) => {
