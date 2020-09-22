@@ -78,47 +78,7 @@ export default class OutputGL {
       0 //offset
     );
 
-    // Texture
-    //var ext = this._gl.getExtension('OES_texture_float');
-    this._textureLocation = this._gl.getUniformLocation(
-      this._program,
-      'u_texture'
-    );
-    this._texture = this._gl.createTexture();
-    this._gl.activeTexture(this._gl.TEXTURE0 + 0);
-    this._gl.bindTexture(this._gl.TEXTURE_2D, this._texture);
-    this._gl.texImage2D(
-      this._gl.TEXTURE_2D,
-      0,
-      this._gl.RGB32F,
-      256,
-      256,
-      0,
-      this._gl.RGB,
-      this._gl.FLOAT,
-      null
-    );
-
-    this._gl.texParameteri(
-      this._gl.TEXTURE_2D,
-      this._gl.TEXTURE_MAG_FILTER,
-      this._gl.NEAREST
-    );
-    this._gl.texParameteri(
-      this._gl.TEXTURE_2D,
-      this._gl.TEXTURE_MIN_FILTER,
-      this._gl.NEAREST
-    );
-    this._gl.texParameteri(
-      this._gl.TEXTURE_2D,
-      this._gl.TEXTURE_WRAP_S,
-      this._gl.REPEAT
-    );
-    this._gl.texParameteri(
-      this._gl.TEXTURE_2D,
-      this._gl.TEXTURE_WRAP_T,
-      this._gl.REPEAT
-    );
+    this._texture = this.createTexture(this._gl, canvas);
 
     this._gl.bindVertexArray(null);
     this._gl.bindBuffer(this._gl.ARRAY_BUFFER, null);
@@ -160,6 +120,56 @@ export default class OutputGL {
     gl.deleteProgram(shaderProgram);
   }
 
+  createTexture(canvas) {
+    // Texture
+    //var ext = this._gl.getExtension('OES_texture_float');
+    const textureLocation = this._gl.getUniformLocation(
+      this._program,
+      'u_texture'
+    );
+    const texture = this._gl.createTexture();
+    this._gl.activeTexture(this._gl.TEXTURE0 + 0);
+    this._gl.bindTexture(this._gl.TEXTURE_2D, texture);
+    this._gl.texImage2D(
+      this._gl.TEXTURE_2D,
+      0,
+      this._gl.RGB32F,
+      canvas.width,
+      canvas.height,
+      0,
+      this._gl.RGB,
+      this._gl.FLOAT,
+      null
+    );
+
+    this._gl.texParameteri(
+      this._gl.TEXTURE_2D,
+      this._gl.TEXTURE_MAG_FILTER,
+      this._gl.NEAREST
+    );
+    this._gl.texParameteri(
+      this._gl.TEXTURE_2D,
+      this._gl.TEXTURE_MIN_FILTER,
+      this._gl.NEAREST
+    );
+    this._gl.texParameteri(
+      this._gl.TEXTURE_2D,
+      this._gl.TEXTURE_WRAP_S,
+      this._gl.REPEAT
+    );
+    this._gl.texParameteri(
+      this._gl.TEXTURE_2D,
+      this._gl.TEXTURE_WRAP_T,
+      this._gl.REPEAT
+    );
+
+    return texture;
+  }
+
+  deleteTexture() {
+    this._gl.deleteTexture(this._texture);
+  }
+
   draw(data) {
     this._gl.viewport(0, 0, this._gl.canvas.width, this._gl.canvas.height);
     this._gl.clearColor(0, 0, 0, 0);
@@ -171,8 +181,8 @@ export default class OutputGL {
       this._gl.TEXTURE_2D,
       0,
       this._gl.RGB32F,
-      256,
-      256,
+      this._gl.canvas.width,
+      this._gl.canvas.height,
       0,
       this._gl.RGB,
       this._gl.FLOAT,

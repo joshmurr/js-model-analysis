@@ -9,12 +9,14 @@ const MODELS = {
   greyscale2flowers: 'models/greyscale2flowers/uncompressed/model.json',
   // 'greyscale2clouds' : 'models/greyscale2clouds/model.json',
   // 'greyscale2forest' : 'models/greyscale2forest/model.json',
+  greyscale2waves: 'models/waves_128/uncompressed/model.json',
   'User Upload': 'NULL',
 };
 
 // const DEFAULT_MODEL = 'Flowers_Uncompressed_H5';
 const DEFAULT_MODEL = 'greyscale2flowers';
-const IMAGE_SIZE = 256;
+const DEFAULT_SIZE = 256;
+let IMAGE_SIZE = DEFAULT_SIZE;
 let MODEL_INPUT_SHAPE;
 
 let videoPlaying = false;
@@ -130,6 +132,19 @@ async function loadModel(modelID) {
     Math.abs(dim.size)
   );
 
+  if (MODEL_INPUT_SHAPE[1] !== DEFAULT_SIZE) {
+    IMAGE_SIZE = MODEL_INPUT_SHAPE[1];
+    resizeCanvases(MODEL_INPUT_SHAPE);
+    const imageFilesElement = document.getElementById('image-file');
+    if ('createEvent' in document) {
+      const evt = document.createEvent('HTMLEvents');
+      evt.initEvent('change', false, true);
+      imageFilesElement.dispatchEvent(evt);
+    } else {
+      imageFilesElement.fireEvent('onchange');
+    }
+  }
+
   model.predict(tf.zeros(MODEL_INPUT_SHAPE)).dispose();
 
   const totalTime = performance.now() - startTime;
@@ -148,6 +163,15 @@ async function loadModel(modelID) {
       tfMemoryDOM[selector].innerText = tfMemoryOutput[item] * 1e-6;
     else tfMemoryDOM[selector].innerText = tfMemoryOutput[item];
   }
+}
+
+function resizeCanvases(shape) {
+  for (const canvas of document.getElementsByTagName('canvas')) {
+    canvas.width = shape[1];
+    canvas.height = shape[2];
+  }
+  outputGL.deleteTexture();
+  outputGL.createTexture(outputVideoGL);
 }
 
 async function predict(imgElement, outputCanvas, gl = false) {
@@ -411,7 +435,7 @@ function preprocessImageCV2(
     output = imgElement.clone();
   }
 
-  if (width !== 256 || height !== 256) {
+  if (width !== IMAGE_SIZE || height !== IMAGE_SIZE) {
     const offset_x = Math.floor((width - IMAGE_SIZE) / 2);
     const offset_y = Math.floor((height - IMAGE_SIZE) / 2);
     const mask = new cv.Rect(offset_x, offset_y, IMAGE_SIZE, IMAGE_SIZE);
