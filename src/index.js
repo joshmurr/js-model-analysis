@@ -1,5 +1,4 @@
 import * as tf from '@tensorflow/tfjs';
-//import { convertToTensor } from '@tensorflow/tfjs-core/dist/tensor_util_env.js';
 import OutputGL from './outputGL.js';
 
 const MODELS = {
@@ -341,7 +340,12 @@ function processVideo(videoElement) {
 
   let dst = new cv.Mat();
 
-  const FPS = 25;
+  let frames = 0;
+  let numberOfDrops = 0;
+  let lowestFrameRate = -1;
+  let time;
+  let times = [];
+  let fps;
   function stream() {
     try {
       if (!videoPlaying) {
@@ -349,8 +353,14 @@ function processVideo(videoElement) {
         frame.delete();
         return;
       }
-
       const begin = performance.now();
+
+      while (times.length > 0 && times[0] <= begin - 1000) {
+        times.shift();
+      }
+      times.push(begin);
+
+      fps = times.length;
 
       cap.read(frame);
       preprocessImageCV2(
@@ -371,14 +381,14 @@ function processVideo(videoElement) {
 
       video_cv2_preprocess.innerText = preprocessed - begin;
       video_model_inference.innerText = inferenced - preprocessed;
+      fps_text.innerText = fps;
 
-      let delay = 1000 / FPS - (performance.now() - begin);
-      setTimeout(stream, delay); // Force FPS
+      requestAnimationFrame(stream); // Force FPS
     } catch (err) {
       console.log(err);
     }
   }
-  setTimeout(stream, 0);
+  requestAnimationFrame(stream);
 }
 
 function initWebcam(video) {
