@@ -53,9 +53,10 @@ Once completed, in your chosen output folder you should see a `model.json` file 
 
 ---
 
-A video of the site in use:
+The site in use (click on the image to see the video on YouTube):
 
-[![Site in Use](https://img.youtube.com/vi/JsSXUqzfHrY/0.jpg)](https://www.youtube.com/watch?v=JsSXUqzfHrY)
+[![Site in Use 1](https://img.youtube.com/vi/JsSXUqzfHrY/0.jpg)](https://www.youtube.com/watch?v=JsSXUqzfHrY)
+[![Site in Use 2](https://img.youtube.com/vi/wiA0dYThQUY/0.jpg)](https://www.youtube.com/watch?v=wiA0dYThQUY)
 
 <!-- -->
 
