@@ -8,7 +8,7 @@ const MODELS = {
   greyscale2flowers: 'models/greyscale2flowers/uncompressed/model.json',
   // 'greyscale2clouds' : 'models/greyscale2clouds/model.json',
   // 'greyscale2forest' : 'models/greyscale2forest/model.json',
-  greyscale2waves: 'models/waves_128/uncompressed/model.json',
+  //greyscale2waves: 'models/waves_128/uncompressed/model.json',
   'User Upload': 'NULL',
 };
 
@@ -168,6 +168,8 @@ function resizeCanvases(shape) {
   for (const canvas of document.getElementsByTagName('canvas')) {
     canvas.width = shape[1];
     canvas.height = shape[2];
+    canvas.style.width = '256px';
+    canvas.style.height = '256px';
   }
   outputGL.deleteTexture();
   outputGL.createTexture(outputVideoGL);

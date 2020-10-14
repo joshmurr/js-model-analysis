@@ -1,6 +1,6 @@
 package-lock.json
 dist/main.js
-dist/models
+dist/models/waves128/
 old_models
 node_modules
 .cache 
