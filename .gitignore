@@ -1,6 +1,14 @@
 package-lock.json
 dist/main.js
-dist/models/waves128/
+dist/models/waves_128/
+dist/models/desaturate2flower/
+dist/models/flowers_64/
+dist/models/greyscale2clouds/
+dist/models/greyscale2forest/
+dist/models/sky/
+dist/models/waves/
+dist/models/wave_128/
+dist/models/webcam2flower/
 old_models
 node_modules
 .cache 
